@@ -788,7 +788,7 @@ def main():
     ordenar_por, tipo_loja = "revenue", None
     comissao = faixa_preco = envio = lancados_ha = categoria_id = None
     nivel = dentro_de = criador_id = None
-    faixa_seguidores = engajamento = None
+    faixa_seguidores = engajamento = filtro_categoria = None
     paginas, por_pagina = 1, 100
     dry_run = "--dry-run" in args
     so_organico = "--so-organico" in args
@@ -810,6 +810,8 @@ def main():
             engajamento = args[i + 1].upper(); i += 2
         elif args[i] == "--criador" and i + 1 < len(args):
             criador_id = args[i + 1]; i += 2
+        elif args[i] == "--filtrar-categoria" and i + 1 < len(args):
+            filtro_categoria = args[i + 1]; i += 2
         elif args[i] == "--nivel" and i + 1 < len(args):
             nivel = args[i + 1]; i += 2
         elif args[i] == "--dentro-de" and i + 1 < len(args):
@@ -841,6 +843,9 @@ def main():
         else:
             i += 1
 
+    # a API espera lista de ids; aceito um id só na linha de comando
+    cats = [filtro_categoria] if filtro_categoria else None
+
     if "--descobrir-cabecalho" in args:
         descobrir_cabecalho()
     elif "--testar" in args:
@@ -848,7 +853,7 @@ def main():
     elif "--ranking-criadores" in args:
         print(f"Ranking de criadores, período {periodo}, ordenado por {ordenar_por}:")
         buscar_ranking_criadores(periodo, data_ref, paginas, por_pagina, ordenar_por,
-                                 None, "--so-independentes" in args, dry_run,
+                                 cats, "--so-independentes" in args, dry_run,
                                  faixa_seguidores, engajamento, palavra, loja_id, produto_id)
     elif criador_id:
         buscar_criador(criador_id, periodo, data_ref, dry_run)
@@ -862,7 +867,7 @@ def main():
         print(f"Ranking de produtos, período {periodo}, ordenado por {ordenar_por}, "
               f"{paginas} chamada(s):")
         buscar_ranking_produtos(periodo, data_ref, paginas, por_pagina, ordenar_por,
-                                None, palavra, loja_id, dry_run,
+                                cats, palavra, loja_id, dry_run,
                                 curadoria="--curadoria" in args,
                                 comissao=comissao, faixa_preco=faixa_preco,
                                 envio=envio, lancados_ha=lancados_ha,
@@ -871,7 +876,7 @@ def main():
         print(f"Ranking de lojas, período {periodo}, ordenado por {ordenar_por}, "
               f"{paginas} chamada(s):")
         buscar_ranking_lojas(periodo, data_ref, paginas, por_pagina, ordenar_por,
-                             None, palavra, tipo_loja, None, dry_run)
+                             cats, palavra, tipo_loja, None, dry_run)
     elif produto_detalhe_id:
         buscar_produto(produto_detalhe_id, periodo, data_ref, dry_run)
     elif loja_id and "--videos-da-loja" not in args:
@@ -897,6 +902,7 @@ def main():
             "  --seguidores 1000-10000       compara com gente do seu tamanho\n"
             "  --engajamento MEDIUM          LOW (<8%), MEDIUM (8-20%) ou HIGH (>20%)\n"
             "  --criador <id>                detalhe de um criador, com o GPM dele\n"
+            "  --filtrar-categoria <id>      restringe os rankings a uma categoria\n"
             "  --categorias --nivel 1        categorias de topo (é onde está moda feminina)\n"
             "  --categorias --dentro-de <id> abre as subcategorias de uma categoria\n"
             "  --categoria <id>              detalhe de uma categoria\n"

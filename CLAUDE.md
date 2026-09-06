@@ -29,6 +29,16 @@ que essa chave permite:
 Se um dia isso precisar ficar realmente fechado, o caminho é login na página com
 Supabase Auth, não esconder a chave.
 
+## Onde roda
+Duas opções, a mesma base de código:
+
+- **VPS da Hostinger** (preferida): `vps/README.md` tem o passo a passo. Chaves num
+  `.env` com `chmod 600`, varredura semanal por cron, logs em `logs/`. Os scripts só
+  usam a biblioteca padrão do Python 3, então não há `pip install` — exceto `openpyxl`,
+  e só se for importar export em `.xlsx`.
+- **GitHub Actions**: workflow com botão em Actions, sem agendamento (cada chamada
+  gasta crédito do Kalodata). Chaves como secrets do repositório.
+
 ## Secrets do GitHub Actions
 `KALODATA_KEY`, `SUPABASE_URL` e `SUPABASE_KEY`. A chave do Kalodata é mostrada uma
 única vez e gerar outra invalida a anterior na hora — ela nunca vai pro repositório
