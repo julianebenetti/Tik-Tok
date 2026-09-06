@@ -1,0 +1,72 @@
+name: Espiao TikTok - Varredura pela API
+
+# Sem agendamento de proposito: cada chamada gasta credito do Kalodata.
+# Quando quiser automatizar, descomente o bloco schedule abaixo.
+# schedule:
+#   - cron: '0 10 * * 1'   # toda segunda, 7h de Brasilia
+
+on:
+  workflow_dispatch:
+    inputs:
+      acao:
+        description: 'O que rodar'
+        required: true
+        default: testar
+        type: choice
+        options:
+          - testar
+          - descobrir-cabecalho
+          - categorias
+          - varredura-completa
+      periodo:
+        description: 'Periodo (1d, 7d, 30d)'
+        required: false
+        default: '7d'
+      categoria:
+        description: 'ID da categoria de moda feminina (opcional, filtra a varredura)'
+        required: false
+        default: ''
+
+jobs:
+  varrer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Rodar
+        env:
+          KALODATA_KEY: ${{ secrets.KALODATA_KEY }}
+          KALODATA_HEADER: ${{ secrets.KALODATA_HEADER || 'secret-key' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PERIODO: ${{ inputs.periodo }}
+        run: |
+          set -e
+          case "${{ inputs.acao }}" in
+            testar)
+              python kalodata-api.py --testar
+              ;;
+            descobrir-cabecalho)
+              python kalodata-api.py --descobrir-cabecalho
+              ;;
+            categorias)
+              python kalodata-api.py --categorias --nivel 1 --periodo "$PERIODO"
+              ;;
+            varredura-completa)
+              echo "== produtos que valem gravar =="
+              python kalodata-api.py --ranking-produtos --curadoria \
+                --ordenar-por video_revenue --periodo "$PERIODO"
+              echo "== lojas que mais pagam afiliado =="
+              python kalodata-api.py --ranking-lojas \
+                --ordenar-por affiliate_revenue --periodo "$PERIODO"
+              echo "== criadores independentes =="
+              python kalodata-api.py --ranking-criadores --so-independentes \
+                --periodo "$PERIODO"
+              ;;
+          esac
