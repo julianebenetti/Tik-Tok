@@ -29,6 +29,19 @@ que essa chave permite:
 Se um dia isso precisar ficar realmente fechado, o caminho é login na página com
 Supabase Auth, não esconder a chave.
 
+## Quanto custa a API (confirmado na página de preços)
+- **Endpoints de detalhe**: 0,1 crédito por chamada, fixo.
+- **Endpoints de ranking**: 0,1 × teto(linhas devolvidas ÷ 100). Com `page_size` 100,
+  que é o que o cliente usa, dá 0,1 por chamada. Pedir 101 linhas custaria 0,2 —
+  por isso paginar de 100 em 100 é o jeito certo.
+- 1 crédito ≈ US$0,10.
+- **A varredura semanal (3 chamadas) custa 0,3 crédito, uns 3 centavos de dólar.**
+  Rodar todo dia sai por menos de US$1 por mês.
+- Os degraus de reembolso só começam em 30.000 chamadas/mês. Esse uso nem chega perto,
+  então não vale otimizar por isso.
+- Conclusão prática: o custo por chamada é irrelevante nessa escala. O que limita é o
+  valor mínimo de recarga, não o consumo.
+
 ## Onde roda
 Duas opções, a mesma base de código:
 
