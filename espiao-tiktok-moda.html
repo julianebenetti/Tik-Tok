@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espião TikTok Shop — Moda Feminina</title>
+<style>
+:root {
+  --bg:#f5f4f0; --bg2:#ffffff; --bg3:#eeedea; --border:#e0ddd6;
+  --text:#1a1916; --muted:#8a877e; --subtle:#b8b5ae;
+  --green:#166534; --green-bg:#dcfce7; --green-bdr:#86efac;
+  --red:#991b1b; --red-bg:#fee2e2; --red-bdr:#fca5a5;
+  --yellow:#92400e; --yellow-bg:#fef3c7;
+  --blue:#1e40af; --blue-bg:#dbeafe;
+  --pink:#be185d; --pink-bg:#fce7f3;
+  --font:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono:'SF Mono','Fira Code',monospace; --r:8px;
+}
+body.ad-dark {
+  --bg:#14161a; --bg2:#1b1e23; --bg3:#22262c; --border:#2c3138;
+  --text:#e8e9eb; --muted:#9297a1; --subtle:#5c6169;
+  --green:#4ade80; --green-bg:#11331f; --green-bdr:#1f5c3a;
+  --red:#f87171; --red-bg:#3a1518; --red-bdr:#5c2328;
+  --yellow:#fbbf24; --yellow-bg:#3a2e0f;
+  --blue:#60a5fa; --blue-bg:#16233d;
+  --pink:#f472b6; --pink-bg:#3a1428;
+}
+body.ad-dark table td, body.ad-dark table th { color:var(--text); }
+body.ad-dark ::-webkit-scrollbar { width:10px; height:10px; }
+body.ad-dark ::-webkit-scrollbar-track { background:var(--bg2); }
+body.ad-dark ::-webkit-scrollbar-thumb { background:var(--border); border-radius:6px; }
+body.ad-dark input, body.ad-dark select, body.ad-dark textarea { background:var(--bg2); color:var(--text); border-color:var(--border); }
+body.ad-dark .modal { background:var(--bg2); color:var(--text); }
+* { margin:0; padding:0; box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+body { background:var(--bg); color:var(--text); font-family:var(--font); font-size:14px; min-height:100vh; }
+
+.top { background:var(--bg2); border-bottom:1px solid var(--border); padding:14px 28px; display:flex; align-items:center; gap:14px; position:sticky; top:0; z-index:100; }
+.top-title { font-size:16px; font-weight:700; letter-spacing:-.3px; }
+.top-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+.top-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+.page { padding:20px 28px 60px; }
+
+.act-btn { display:inline-flex; align-items:center; gap:5px; padding:6px 13px; border:1px solid var(--border); border-radius:var(--r); background:var(--bg2); color:var(--muted); font-size:12px; font-weight:500; cursor:pointer; font-family:var(--font); white-space:nowrap; }
+.act-btn:hover { border-color:#2563eb; color:#2563eb; background:var(--blue-bg); }
+.act-btn.mini { font-size:11px; padding:4px 9px; }
+.act-btn.pri { background:#2563eb; border-color:#2563eb; color:#fff; }
+.act-btn.pri:hover { background:#1d4ed8; color:#fff; }
+
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:20px; }
+.kpi { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r); padding:14px 16px; }
+.kpi-label { font-size:11px; color:var(--muted); font-weight:500; text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; }
+.kpi-val { font-size:20px; font-weight:700; letter-spacing:-.5px; line-height:1; }
+.kpi-val.pos { color:var(--green); }
+.kpi-val.pink { color:var(--pink); }
+
+.section { background:var(--bg2); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; margin-bottom:20px; }
+.section-head { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.section-title { font-size:13px; font-weight:700; letter-spacing:.2px; display:inline-block; background:#2d2b27; color:#f0efec; padding:5px 12px; border-radius:6px; }
+.section-sub { font-size:11px; color:var(--muted); }
+.controls { display:flex; gap:6px; align-items:center; flex-wrap:wrap; flex:1; min-width:0; }
+.filter-btn { padding:4px 10px; font-size:11px; border:1px solid var(--border); border-radius:20px; background:transparent; color:var(--muted); cursor:pointer; font-family:var(--font); }
+.filter-btn.on { background:#2563eb; color:#fff; border-color:#2563eb; }
+.search-box { padding:5px 10px; font-size:12px; border:1px solid var(--border); border-radius:var(--r); background:var(--bg); color:var(--text); font-family:var(--font); outline:none; width:200px; }
+.search-box:focus { border-color:#2563eb; }
+.op-sel { padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:var(--r); background:var(--bg2); color:var(--text); font-family:var(--font); outline:none; }
+
+.aviso { padding:11px 16px; background:var(--yellow-bg); color:var(--yellow); font-size:11.5px; line-height:1.5; border-bottom:1px solid var(--border); }
+
+.card-grid { padding:16px; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; }
+.card { border:1px solid var(--border); border-radius:var(--r); padding:13px; background:var(--bg); display:flex; flex-direction:column; gap:7px; }
+.card-title { font-weight:700; font-size:13.5px; line-height:1.3; }
+.card-desc { font-size:11.5px; color:var(--muted); line-height:1.45; }
+.tags { display:flex; flex-wrap:wrap; gap:4px; }
+.tag { font-size:10.5px; font-family:var(--mono); background:var(--bg3); color:var(--muted); padding:2px 7px; border-radius:20px; }
+.card-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:auto; padding-top:4px; align-items:center; }
+
+.tbl-wrap { overflow-x:auto; overflow-y:auto; max-height:70vh; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+th { padding:7px 8px; text-align:right; font-size:10px; font-weight:700; color:#f0efec; text-transform:uppercase; letter-spacing:.3px; border-bottom:1px solid var(--border); white-space:nowrap; cursor:pointer; background:#2d2b27; position:sticky; top:0; z-index:10; }
+th:first-child { text-align:left; }
+th:hover { color:#fff; }
+td { padding:6px 8px; text-align:right; border-bottom:1px solid var(--border); color:var(--text); white-space:nowrap; font-size:12px; }
+td:first-child { text-align:left; white-space:normal; word-break:break-word; max-width:270px; }
+td.wrap-cell { white-space:normal; word-break:break-word; max-width:150px; }
+tr:last-child td { border-bottom:none; }
+tr.data-row:hover td { background:var(--bg3); }
+
+.badge { display:inline-block; padding:2px 7px; border-radius:20px; font-size:10px; font-weight:600; white-space:nowrap; text-transform:uppercase; }
+.b-subindo   { background:var(--green-bg); color:var(--green); border:1px solid var(--green-bdr); }
+.b-pico      { background:var(--pink-bg); color:var(--pink); }
+.b-saturando { background:var(--yellow-bg); color:var(--yellow); }
+.b-morta     { background:var(--red-bg); color:var(--red); }
+.b-num       { background:#166534; color:#fff; }
+.b-fonte-affiliate_center { background:var(--green-bg); color:var(--green); }
+.b-fonte-pesquisa { background:var(--blue-bg); color:var(--blue); }
+.b-fonte-manual   { background:var(--bg3); color:var(--muted); }
+
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:16px; }
+.modal-bg.open { display:flex; }
+.modal { background:var(--bg2); border-radius:12px; padding:24px; width:720px; max-width:100%; max-height:88vh; overflow-y:auto; }
+.modal h3 { font-size:16px; font-weight:700; margin-bottom:4px; padding-right:30px; }
+.modal-close { float:right; background:none; border:none; font-size:20px; cursor:pointer; color:var(--muted); line-height:1; }
+.roteiro-bloco { background:var(--bg); border:1px solid var(--border); border-radius:var(--r); padding:12px; margin:10px 0; }
+.roteiro-bloco h4 { font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:6px; }
+.roteiro-bloco p { font-size:13px; line-height:1.55; white-space:pre-wrap; }
+
+.form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; padding:14px 16px; border-bottom:1px solid var(--border); }
+.form-grid.no-border { border-bottom:none; }
+.campo { display:flex; flex-direction:column; gap:4px; }
+.campo label { font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); font-weight:600; }
+.campo input, .campo select, .campo textarea { padding:6px 10px; font-size:12px; border:1px solid var(--border); border-radius:var(--r); background:var(--bg); color:var(--text); font-family:var(--font); outline:none; width:100%; }
+.campo input:focus, .campo textarea:focus { border-color:#2563eb; }
+.form-acoes { display:flex; gap:8px; align-items:center; padding:0 16px 14px; flex-wrap:wrap; }
+
+.empty { text-align:center; padding:22px; color:var(--muted); font-size:12px; line-height:1.6; }
+
+@media (max-width:600px) {
+  .top { padding:12px 14px; }
+  .page { padding:12px 12px 60px; }
+  .kpi-grid { grid-template-columns:repeat(2,1fr); gap:8px; }
+  .kpi-val { font-size:18px; }
+  .section-head { flex-direction:column; align-items:flex-start; }
+  .card-grid { grid-template-columns:1fr; padding:12px; }
+  .form-grid { grid-template-columns:1fr 1fr; }
+  .search-box { width:100%; }
+  .tbl-wrap { font-size:11px; }
+}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <div class="top-title">🕵️‍♀️ Espião TikTok Shop — Moda Feminina</div>
+    <div class="top-sub">O que vende no TikTok Shop, o vídeo que viralizou e o roteiro pronto — dados ao vivo do Supabase</div>
+  </div>
+  <div class="top-right">
+    <button class="act-btn" onclick="tkLoadAll()">⟳ Atualizar</button>
+    <button id="btn-dark-mode" onclick="toggleDarkMode()" title="Alternar modo claro/escuro"
+      style="font-size:11px;padding:5px 10px;border:1px solid var(--border);border-radius:20px;background:var(--bg2);color:var(--muted);cursor:pointer;">🌙 Modo escuro</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="kpi-grid" id="tk-stats">
+    <div class="kpi"><div class="kpi-label">Carregando</div><div class="kpi-val">—</div></div>
+  </div>
+
+  <!-- TENDÊNCIAS -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">🔥 O que está vendendo no TikTok Shop</span>
+      <span class="section-sub" id="tk-tend-sub"></span>
+      <div class="controls" style="justify-content:flex-end;">
+        <div id="tk-tend-filtros" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      </div>
+    </div>
+    <div class="card-grid" id="tk-tend-grid"><div class="empty">Carregando…</div></div>
+  </div>
+
+  <!-- MAIORES VENDEDORES -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">🏆 Maiores vendedores</span>
+      <span class="section-sub" id="tk-lojas-sub"></span>
+      <div class="controls" style="justify-content:flex-end;">
+        <div id="tk-periodo-filtros" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      </div>
+    </div>
+    <div class="aviso" id="tk-lojas-aviso"></div>
+    <div class="tbl-wrap" style="max-height:52vh;">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left;">Loja</th><th>Tipo</th><th>Faturamento</th>
+            <th title="Quanto do faturamento da loja vem de afiliado">Afiliado</th>
+            <th>Unidades</th><th>Ticket médio</th><th>Produtos</th><th>Criadores</th>
+            <th>Crescimento</th><th>Link</th>
+          </tr>
+        </thead>
+        <tbody id="tk-lojas-tbody"><tr><td colspan="10" class="empty">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RANKING DE PRODUTOS -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">📈 Ranking de produtos</span>
+      <span class="section-sub" id="tk-rank-sub"></span>
+    </div>
+    <div class="aviso">
+      A coluna <b>Vídeo</b> é a fatia do faturamento que veio de vídeo, e não de live. Abaixo de 10%
+      o produto praticamente só vende ao vivo, então gravar vídeo pra ele rende pouco.
+      <b>Com. R$</b> em vermelho é comissão abaixo do piso de R$9,00.
+    </div>
+    <div class="tbl-wrap" style="max-height:52vh;">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left;">Produto</th><th>Loja</th><th>Preço</th>
+            <th>Faturamento</th><th title="Quanto do faturamento veio de vídeo, e não de live">Vídeo</th>
+            <th>Unidades</th><th>Com. %</th><th>Com. R$</th><th>Nota</th>
+            <th>Crescimento</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tk-rank-tbody"><tr><td colspan="11" class="empty">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PRODUTOS -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">🛒 Produtos pra divulgar</span>
+      <span class="section-sub" id="tk-prod-sub"></span>
+      <div class="controls" style="justify-content:flex-end;">
+        <button class="act-btn pri" onclick="tkAbrirFormProduto()">+ Produto do Centro de Afiliados</button>
+      </div>
+    </div>
+    <div class="aviso">
+      Os produtos marcados como <b>pesquisa</b> vieram da varredura de tendências — o nome é a categoria campeã, ainda sem comissão nem link.
+      Abra o Centro de Afiliados do TikTok Shop, filtre por essa categoria e clique em <b>✏️</b> pra colar o produto real, a comissão e o link de afiliado.
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr;">
+      <div class="controls" id="tk-prod-filtros"></div>
+    </div>
+    <div class="form-grid" style="grid-template-columns:auto auto 1fr auto; align-items:end;">
+      <div class="campo"><label>Buscar em</label>
+        <select class="op-sel" id="tk-prod-campo">
+          <option value="produto">Produto</option>
+          <option value="tendencia_nome">Tendência</option>
+          <option value="categoria">Categoria</option>
+          <option value="seller">Seller</option>
+        </select>
+      </div>
+      <div class="campo"><label>&nbsp;</label><input class="search-box" id="tk-prod-texto" placeholder="Digite pra filtrar…"></div>
+      <div></div>
+      <div class="campo"><label>&nbsp;</label><button class="act-btn" onclick="tkLimparBusca()">✕ Limpar</button></div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left;" onclick="tkSort('produto')">Produto</th>
+            <th onclick="tkSort('tendencia_nome')">Tendência</th>
+            <th onclick="tkSort('categoria')">Categoria</th>
+            <th onclick="tkSort('preco_num')">Preço</th>
+            <th onclick="tkSort('unidades_vendidas')">Vendidos</th>
+            <th onclick="tkSort('avaliacao')">Aval.</th>
+            <th onclick="tkSort('comissao_percentual')">Com. %</th>
+            <th onclick="tkSort('comissao_reais')">Com. R$</th>
+            <th onclick="tkSort('score')">Score</th>
+            <th onclick="tkSort('fonte')">Fonte</th>
+            <th onclick="tkSort('status')">Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tk-prod-tbody"><tr><td colspan="12" class="empty">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VÍDEOS VIRAIS -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">📹 Vídeos que viralizaram</span>
+      <span class="section-sub" id="tk-vid-sub"></span>
+      <div class="controls" style="justify-content:flex-end;">
+        <button class="act-btn pri" onclick="tkAbrirFormVideo()">+ Anotar vídeo</button>
+      </div>
+    </div>
+    <div class="card-grid" id="tk-vid-grid"><div class="empty">Carregando…</div></div>
+  </div>
+
+  <!-- ROTEIROS -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">🎬 Roteiros de vídeo</span>
+      <span class="section-sub" id="tk-rot-sub"></span>
+      <div class="controls" style="justify-content:flex-end;">
+        <div id="tk-rot-filtros" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      </div>
+    </div>
+    <div class="card-grid" id="tk-rot-grid"><div class="empty">Carregando…</div></div>
+  </div>
+
+  <!-- CRIADORES -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">👀 Perfis espionados</span>
+      <span class="section-sub">Contas de moda feminina que valem acompanhar — de quem copiar formato e gancho</span>
+    </div>
+    <div class="form-grid">
+      <div class="campo"><label>Perfil</label><input id="tk-cri-arroba" placeholder="@perfil"></div>
+      <div class="campo"><label>Nome</label><input id="tk-cri-nome" placeholder="Nome"></div>
+      <div class="campo"><label>Nicho</label><input id="tk-cri-nicho" placeholder="ex: achadinhos"></div>
+      <div class="campo"><label>Tipo</label>
+        <select id="tk-cri-tipo">
+          <option value="concorrente">Concorrente</option>
+          <option value="referencia">Referência</option>
+          <option value="loja">Seller / loja</option>
+        </select>
+      </div>
+      <div class="campo"><label>Seguidores</label><input id="tk-cri-seg" type="number" placeholder="0"></div>
+      <div class="campo"><label>Link</label><input id="tk-cri-link" placeholder="https://tiktok.com/@…"></div>
+    </div>
+    <div class="form-acoes">
+      <button class="act-btn pri" onclick="tkAddCriador()">+ Adicionar perfil</button>
+      <span id="tk-cri-msg" style="font-size:11px;color:var(--muted);"></span>
+    </div>
+    <div class="tbl-wrap" style="max-height:44vh;">
+      <table>
+        <thead>
+          <tr><th style="text-align:left;">Perfil</th><th>Nome</th><th>Nicho</th><th>Tipo</th><th>Seguidores</th><th>Link</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="tk-cri-tbody"><tr><td colspan="7" class="empty">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-bg" id="tk-modal-bg" onclick="if(event.target===this) tkFecharModal()">
+  <div class="modal" id="tk-modal"></div>
+</div>
+
+<script>
+// ── Namespace isolado "tk*" — mesmo projeto Supabase do Garimpo/AfiliDash ──
+const TK_URL = "https://tkxkrbdvcctoajuigvvv.supabase.co";
+const TK_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRreGtyYmR2Y2N0b2FqdWlndnZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NzY2NzUsImV4cCI6MjA5OTQ1MjY3NX0.-szTE2wYYr9DNTLiff6zmLpbP6UOL1l9SFpvc-29Njs";
+const TK_COMISSAO_MINIMA = 9.00; // mesmo piso do Garimpo: abaixo disso não vale gravar
+
+let tkTendencias = [], tkProdutos = [], tkVideos = [], tkRoteiros = [], tkCriadores = [];
+let tkLojas = [], tkRankProdutos = [];
+let tkPeriodo = '7d';
+let tkFiltroFase = "Todas", tkFiltroCategoria = "Todas", tkFiltroStatus = "Todos", tkFiltroRoteiro = "Todos";
+let tkCampoBusca = "produto", tkTextoBusca = "";
+let tkSortKey = "score", tkSortDir = -1;
+
+const TK_FASES = ["subindo","pico","saturando","morta"];
+const TK_ROTULO_FASE = { subindo:"📈 Subindo", pico:"🔥 No pico", saturando:"⚠️ Saturando", morta:"🪦 Morta" };
+const TK_STATUS = ["novo","aprovado","gravando","postado","descartado"];
+const TK_ROT_STATUS = ["a_gravar","gravado","editado","postado"];
+const TK_ROTULO_ROT = { a_gravar:"🎯 A gravar", gravado:"🎥 Gravado", editado:"✂️ Editado", postado:"🚀 Postado" };
+const TK_ROTULO_FONTE = { affiliate_center:"Centro de Afiliados", pesquisa:"Pesquisa", manual:"Manual" };
+
+function tkEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function tkAttr(s){ return tkEsc(s).replace(/\n/g,'&#10;'); }
+function tkNum(n){ return new Intl.NumberFormat('pt-BR').format(n||0); }
+function tkReais(n){ return 'R$' + (parseFloat(n)||0).toFixed(2).replace('.',','); }
+function tkData(iso){ if(!iso) return '—'; const [y,m,d] = iso.split('-'); return `${d}/${m}/${y}`; }
+function tkVal(id){ const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function tkNumOrNull(id){ const v = parseFloat(String(tkVal(id)).replace(',','.')); return isNaN(v) ? null : v; }
+function tkIntOrNull(id){ const v = parseInt(tkVal(id), 10); return isNaN(v) ? null : v; }
+
+async function tkFetch(path){
+  const res = await fetch(`${TK_URL}/rest/v1/${path}`, { headers:{ apikey:TK_KEY, Authorization:`Bearer ${TK_KEY}` } });
+  if(!res.ok) throw new Error(`Erro ${res.status}`);
+  return res.json();
+}
+async function tkPatch(tabela, id, body){
+  const res = await fetch(`${TK_URL}/rest/v1/${tabela}?id=eq.${id}`, {
+    method:'PATCH',
+    headers:{ apikey:TK_KEY, Authorization:`Bearer ${TK_KEY}`, 'Content-Type':'application/json', Prefer:'return=representation' },
+    body: JSON.stringify(body)
+  });
+  if(!res.ok) throw new Error(`Erro ${res.status} ao salvar`);
+  return res.json();
+}
+async function tkPost(tabela, body){
+  const res = await fetch(`${TK_URL}/rest/v1/${tabela}`, {
+    method:'POST',
+    headers:{ apikey:TK_KEY, Authorization:`Bearer ${TK_KEY}`, 'Content-Type':'application/json', Prefer:'return=representation' },
+    body: JSON.stringify(body)
+  });
+  if(!res.ok) throw new Error(`Erro ${res.status} ao inserir`);
+  return res.json();
+}
+async function tkDelete(tabela, id){
+  const res = await fetch(`${TK_URL}/rest/v1/${tabela}?id=eq.${id}`, {
+    method:'DELETE', headers:{ apikey:TK_KEY, Authorization:`Bearer ${TK_KEY}`, Prefer:'return=minimal' }
+  });
+  if(!res.ok) throw new Error(`Erro ${res.status} ao excluir`);
+}
+
+async function tkLoadAll(){
+  try {
+    const [tend, prod, vid, rot, cri, lojas, rank] = await Promise.all([
+      tkFetch('tiktok_tendencias?select=*&order=data_deteccao.desc,score.desc'),
+      tkFetch('tiktok_produtos?select=*&order=score.desc'),
+      tkFetch('tiktok_videos?select=*&order=data_deteccao.desc,views.desc'),
+      tkFetch('tiktok_roteiros?select=*&order=data_criacao.desc,id.desc'),
+      tkFetch('tiktok_criadores?select=*&order=arroba.asc'),
+      tkFetch('tiktok_lojas?select=*&order=data_ref.desc,gmv.desc'),
+      tkFetch('tiktok_ranking_produtos?select=*&order=data_ref.desc,gmv.desc')
+    ]);
+    tkTendencias = tend; tkProdutos = prod; tkVideos = vid; tkRoteiros = rot; tkCriadores = cri;
+    tkLojas = lojas; tkRankProdutos = rank;
+    tkRenderTudo();
+  } catch(err){
+    document.getElementById('tk-prod-tbody').innerHTML =
+      `<tr><td colspan="12" class="empty" style="color:var(--red);">Erro ao carregar: ${tkEsc(err.message)}</td></tr>`;
+  }
+}
+function tkRenderTudo(){
+  tkRenderStats();
+  tkRenderLojas(); tkRenderRanking();
+  tkRenderFiltrosTendencia(); tkRenderTendencias();
+  tkRenderFiltrosProduto();   tkRenderProdutos();
+  tkRenderVideos();
+  tkRenderFiltrosRoteiro();   tkRenderRoteiros();
+  tkRenderCriadores();
+}
+
+/* ── KPIs ── */
+function tkRenderStats(){
+  const ativas    = tkTendencias.filter(t => t.ativo && t.fase !== 'morta').length;
+  const comLink   = tkProdutos.filter(p => p.link_afiliado).length;
+  const aprovados = tkProdutos.filter(p => p.status === 'aprovado').length;
+  const aGravar   = tkRoteiros.filter(r => r.status === 'a_gravar').length;
+  const postados  = tkRoteiros.filter(r => r.status === 'postado').length;
+  const comissoes = tkProdutos.filter(p => p.status !== 'descartado' && p.comissao_reais != null)
+                              .map(p => parseFloat(p.comissao_reais) || 0);
+  const maior = comissoes.length ? Math.max(...comissoes) : 0;
+  const topo  = tkLojasDoDia()[0];
+  document.getElementById('tk-stats').innerHTML = `
+    ${topo ? `<div class="kpi"><div class="kpi-label">Maior vendedor (${tkEsc(topo.periodo||'7d')})</div>
+      <div class="kpi-val pink" style="font-size:15px;line-height:1.25;">${tkEsc(topo.loja)}</div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:5px;font-family:var(--mono);">
+        ${topo.gmv != null ? tkReaisCurto(topo.gmv) : '—'} · ${topo.unidades != null ? tkNum(topo.unidades)+' un.' : '—'}
+      </div></div>` : ''}
+    <div class="kpi"><div class="kpi-label">Tendências ativas</div><div class="kpi-val pink">${ativas}</div></div>
+    <div class="kpi"><div class="kpi-label">Produtos mapeados</div><div class="kpi-val">${tkProdutos.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Com link de afiliado</div><div class="kpi-val ${comLink?'pos':''}">${comLink}</div></div>
+    <div class="kpi"><div class="kpi-label">Aprovados pra gravar</div><div class="kpi-val pos">${aprovados}</div></div>
+    <div class="kpi"><div class="kpi-label">Vídeos anotados</div><div class="kpi-val">${tkVideos.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Roteiros a gravar</div><div class="kpi-val">${aGravar}</div></div>
+    <div class="kpi"><div class="kpi-label">Vídeos postados</div><div class="kpi-val pos">${postados}</div></div>
+    <div class="kpi"><div class="kpi-label">Maior comissão</div><div class="kpi-val pos">${comissoes.length ? tkReais(maior) : '—'}</div></div>
+  `;
+}
+
+/* ── TENDÊNCIAS ── */
+function tkRenderFiltrosTendencia(){
+  const fases = ["Todas", ...TK_FASES.filter(f => tkTendencias.some(t => t.fase === f))];
+  document.getElementById('tk-tend-filtros').innerHTML = fases.map(f => {
+    const n = f === "Todas" ? tkTendencias.length : tkTendencias.filter(t => t.fase === f).length;
+    return `<button class="filter-btn ${tkFiltroFase===f?'on':''}" onclick="tkSetFase('${f}')">${f==="Todas"?"Todas":TK_ROTULO_FASE[f]} (${n})</button>`;
+  }).join('');
+}
+function tkSetFase(f){ tkFiltroFase = f; tkRenderFiltrosTendencia(); tkRenderTendencias(); }
+
+function tkRenderTendencias(){
+  const lista = tkTendencias.filter(t => tkFiltroFase === "Todas" || t.fase === tkFiltroFase);
+  const ultima = tkTendencias.length ? tkTendencias[0].data_deteccao : null;
+  document.getElementById('tk-tend-sub').textContent =
+    ultima ? `${lista.length} tendência(s) — última varredura em ${tkData(ultima)}` : '';
+  const grid = document.getElementById('tk-tend-grid');
+  if(!lista.length){ grid.innerHTML = '<div class="empty">Nenhuma tendência nesse filtro.</div>'; return; }
+  grid.innerHTML = lista.map(t => {
+    const nProd = tkProdutos.filter(p => p.tendencia_id === t.id).length;
+    return `
+    <div class="card" ${t.ativo ? '' : 'style="opacity:.5;"'}>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span class="badge b-${t.fase}">${TK_ROTULO_FASE[t.fase]||t.fase}</span>
+        <span class="tag">score ${Math.round(t.score||0)}</span>
+        <span class="tag">${tkEsc(t.nicho||'—')}</span>
+      </div>
+      <div class="card-title">${tkEsc(t.tendencia)}</div>
+      <div class="card-desc">${tkEsc(t.descricao||'')}</div>
+      <div class="card-desc" style="border-left:2px solid var(--border);padding-left:8px;">
+        <b>De onde veio:</b> ${tkEsc(t.evidencia||'—')}
+      </div>
+      ${t.audio_sugerido ? `<div class="card-desc">🎵 ${tkEsc(t.audio_sugerido)}</div>` : ''}
+      <div class="tags">${(t.hashtags||[]).map(h => `<span class="tag">${tkEsc(h)}</span>`).join('')}</div>
+      <div class="card-actions">
+        ${(t.hashtags||[]).length ? `<button class="act-btn mini" onclick="tkCopiar(${JSON.stringify((t.hashtags||[]).join(' ')).replace(/"/g,'&quot;')})">⧉ Hashtags</button>` : ''}
+        <button class="act-btn mini" onclick="tkFiltrarPorTendencia(${t.id})">🛒 ${nProd} produto(s)</button>
+        <select class="op-sel" style="font-size:11px;padding:3px 6px;" onchange="tkMudarFase(${t.id}, this.value)">
+          ${TK_FASES.map(f => `<option value="${f}" ${t.fase===f?'selected':''}>${TK_ROTULO_FASE[f]}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function tkMudarFase(id, fase){
+  try { await tkPatch('tiktok_tendencias', id, { fase, ativo: fase !== 'morta' });
+    const t = tkTendencias.find(x => x.id === id); if(t){ t.fase = fase; t.ativo = fase !== 'morta'; }
+    tkRenderStats(); tkRenderFiltrosTendencia(); tkRenderTendencias();
+  } catch(err){ alert(err.message); }
+}
+function tkFiltrarPorTendencia(id){
+  const t = tkTendencias.find(x => x.id === id); if(!t) return;
+  tkCampoBusca = 'tendencia_nome'; tkTextoBusca = t.tendencia;
+  document.getElementById('tk-prod-campo').value = 'tendencia_nome';
+  document.getElementById('tk-prod-texto').value = t.tendencia;
+  tkRenderProdutos();
+  document.getElementById('tk-prod-tbody').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+/* ── MAIORES VENDEDORES E RANKING (dados do Kalodata) ── */
+function tkReaisCurto(n){
+  const v = parseFloat(n) || 0;
+  if(Math.abs(v) >= 1e6) return 'R$' + (v/1e6).toFixed(1).replace('.',',') + ' mi';
+  if(Math.abs(v) >= 1e3) return 'R$' + (v/1e3).toFixed(1).replace('.',',') + ' mil';
+  return tkReais(v);
+}
+function tkCresc(p){
+  if(p == null) return '—';
+  const v = parseFloat(p) || 0;
+  const cor = v > 0 ? 'var(--green)' : (v < 0 ? 'var(--red)' : 'var(--muted)');
+  return `<span style="color:${cor};">${v > 0 ? '+' : ''}${v.toFixed(1).replace('.',',')}%</span>`;
+}
+// Comissão em R$: o Kalodata dá o percentual, o valor sai do preço.
+function tkComissaoRank(r){
+  if(r.comissao_reais != null) return parseFloat(r.comissao_reais);
+  const base = r.preco != null ? parseFloat(r.preco)
+             : (r.preco_medio != null ? parseFloat(r.preco_medio) : null);
+  if(base == null || r.comissao_percentual == null) return null;
+  return +(base * parseFloat(r.comissao_percentual) / 100).toFixed(2);
+}
+
+// A pergunta que decide se vale gravar: esse produto vende por vídeo ou por live?
+function tkFatiaVideo(r){
+  const total = parseFloat(r.gmv) || 0;
+  if(!total || r.receita_video == null) return '<span style="color:var(--subtle);">—</span>';
+  const pct = (parseFloat(r.receita_video) / total) * 100;
+  const cor = pct >= 30 ? 'var(--green)' : (pct >= 10 ? 'var(--yellow)' : 'var(--red)');
+  const dica = pct >= 30 ? 'Vende bem por vídeo'
+             : (pct >= 10 ? 'Vende mais por live que por vídeo'
+                          : 'Quase tudo vem de live — vídeo gravado rende pouco aqui');
+  return `<span style="font-family:var(--mono);color:${cor};font-weight:700;" title="${dica}">${pct.toFixed(1).replace('.',',')}%</span>`;
+}
+
+// Loja que fatura com afiliado é loja acostumada a trabalhar com criador.
+// É onde você tem chance de entrar, mesmo sem ser a maior do ranking.
+function tkFatiaAfiliado(l){
+  const total = parseFloat(l.gmv) || 0;
+  if(!total || l.receita_afiliados == null) return '<span style="color:var(--subtle);">—</span>';
+  const pct = (parseFloat(l.receita_afiliados) / total) * 100;
+  const cor = pct >= 40 ? 'var(--green)' : (pct >= 15 ? 'var(--yellow)' : 'var(--red)');
+  const dica = pct >= 40 ? 'Vive de afiliado — porta aberta pra criador'
+             : (pct >= 15 ? 'Trabalha com afiliado, mas não depende disso'
+                          : 'Vende quase tudo sozinha, difícil entrar como afiliada');
+  return `<span style="font-family:var(--mono);color:${cor};font-weight:700;" title="${dica}">${pct.toFixed(0)}%</span>`;
+}
+
+function tkUltimaData(lista){
+  return lista.reduce((max, r) => (!max || r.data_ref > max) ? r.data_ref : max, null);
+}
+function tkLojasDoDia(){
+  const lista = tkLojas.filter(l => l.periodo === tkPeriodo);
+  const ultima = tkUltimaData(lista);
+  return lista.filter(l => l.data_ref === ultima)
+              .sort((a,b) => (parseFloat(b.gmv)||0) - (parseFloat(a.gmv)||0));
+}
+function tkRankingDoDia(){
+  const lista = tkRankProdutos.filter(r => r.periodo === tkPeriodo);
+  const ultima = tkUltimaData(lista);
+  return lista.filter(r => r.data_ref === ultima)
+              .sort((a,b) => (parseFloat(b.gmv)||0) - (parseFloat(a.gmv)||0));
+}
+function tkSetPeriodo(p){ tkPeriodo = p; tkRenderStats(); tkRenderLojas(); tkRenderRanking(); }
+
+const TK_VAZIO_KALODATA = `<div class="empty">
+  Nenhum dado importado ainda.<br>
+  Exporte a tela de Lojas e a de Produtos no Kalodata, filtrando moda feminina e 7 dias,
+  e largue os arquivos na pasta <b>dados-kalodata/</b> do repositório.<br>
+  O import roda sozinho e os números aparecem aqui.<br>
+  <span style="font-size:11px;">Os valores do Kalodata são estimativa a partir de sinais públicos, não são dado oficial do TikTok.</span>
+</div>`;
+
+function tkRenderPeriodoFiltros(){
+  const disponiveis = [...new Set([...tkLojas, ...tkRankProdutos].map(r => r.periodo))];
+  const opcoes = ['1d','7d','30d','90d'].filter(p => disponiveis.includes(p));
+  document.getElementById('tk-periodo-filtros').innerHTML = opcoes.length < 2 ? '' :
+    opcoes.map(p => `<button class="filter-btn ${tkPeriodo===p?'on':''}" onclick="tkSetPeriodo('${p}')">${p}</button>`).join('');
+}
+
+function tkRenderLojas(){
+  tkRenderPeriodoFiltros();
+  const lista = tkLojasDoDia();
+  const sub = document.getElementById('tk-lojas-sub');
+  const tbody = document.getElementById('tk-lojas-tbody');
+  if(!lista.length){
+    sub.textContent = '';
+    tbody.innerHTML = `<tr><td colspan="10">${TK_VAZIO_KALODATA}</td></tr>`;
+    return;
+  }
+  sub.textContent = `${lista.length} loja(s) — últimos ${tkPeriodo}, importado em ${tkData(lista[0].data_ref)} (estimativa Kalodata)`;
+  document.getElementById('tk-lojas-aviso').innerHTML =
+    'A coluna <b>Afiliado</b> é a fatia do faturamento que veio de pedidos de afiliado. '
+    + 'Verde acima de 40% é loja que vive de criador, e é onde você tem chance de entrar. '
+    + 'Vermelho abaixo de 15% é loja que vende sozinha.';
+  tbody.innerHTML = lista.map((l, i) => `
+    <tr class="data-row">
+      <td><span class="badge b-num">#${i+1}</span> <b>${tkEsc(l.loja)}</b></td>
+      <td class="wrap-cell">${tkEsc(l.tipo_loja || l.categoria || '—')}</td>
+      <td style="font-family:var(--mono);font-weight:700;color:var(--green);">${l.gmv != null ? tkReaisCurto(l.gmv) : '—'}</td>
+      <td>${tkFatiaAfiliado(l)}</td>
+      <td style="font-family:var(--mono);">${l.unidades != null ? tkNum(l.unidades) : '—'}</td>
+      <td style="font-family:var(--mono);">${l.preco_medio != null ? tkReais(l.preco_medio) : '—'}</td>
+      <td style="font-family:var(--mono);">${l.produtos_ativos != null ? tkNum(l.produtos_ativos) : '—'}</td>
+      <td style="font-family:var(--mono);">${l.criadores != null ? tkNum(l.criadores) : '—'}</td>
+      <td style="font-family:var(--mono);">${tkCresc(l.crescimento_pct)}</td>
+      <td>${l.link ? `<a href="${tkEsc(l.link)}" target="_blank" rel="noopener" style="color:#2563eb;">abrir ↗</a>` : '—'}</td>
+    </tr>`).join('');
+}
+
+function tkRenderRanking(){
+  const lista = tkRankingDoDia();
+  const sub = document.getElementById('tk-rank-sub');
+  const tbody = document.getElementById('tk-rank-tbody');
+  if(!lista.length){
+    sub.textContent = '';
+    tbody.innerHTML = `<tr><td colspan="11">${TK_VAZIO_KALODATA}</td></tr>`;
+    return;
+  }
+  sub.textContent = `${lista.length} produto(s) — últimos ${tkPeriodo}, importado em ${tkData(lista[0].data_ref)} (estimativa Kalodata)`;
+  tbody.innerHTML = lista.map((r, i) => {
+    const com = tkComissaoRank(r);
+    const baixa = com != null && com < TK_COMISSAO_MINIMA;
+    return `
+    <tr class="data-row">
+      <td>
+        <div><span class="badge b-num">#${i+1}</span> ${tkEsc(r.produto)}</div>
+        ${r.observacoes ? `<div style="font-size:10.5px;color:var(--muted);margin-top:3px;">${tkEsc(r.observacoes)}</div>` : ''}
+      </td>
+      <td class="wrap-cell">${tkEsc(r.loja||'—')}</td>
+      <td style="font-family:var(--mono);">${r.preco != null ? tkReais(r.preco) : (r.preco_medio != null ? tkReais(r.preco_medio) : '—')}</td>
+      <td style="font-family:var(--mono);font-weight:700;color:var(--green);">${r.gmv != null ? tkReaisCurto(r.gmv) : '—'}</td>
+      <td>${tkFatiaVideo(r)}</td>
+      <td style="font-family:var(--mono);">${r.unidades != null ? tkNum(r.unidades) : '—'}</td>
+      <td style="font-family:var(--mono);">${r.comissao_percentual != null ? Number(r.comissao_percentual).toFixed(1)+'%' : '—'}</td>
+      <td style="font-family:var(--mono);font-weight:700;color:${com == null ? 'var(--muted)' : (baixa ? 'var(--red)' : 'var(--green)')};"
+          ${baixa ? `title="Abaixo do piso de ${tkReais(TK_COMISSAO_MINIMA)}"` : ''}>
+        ${com == null ? '—' : tkReais(com)}${baixa ? ' ⚠️' : ''}
+      </td>
+      <td style="font-family:var(--mono);">${r.avaliacao != null ? Number(r.avaliacao).toFixed(1)+'⭐' : '—'}</td>
+      <td style="font-family:var(--mono);">${tkCresc(r.crescimento_pct)}</td>
+      <td style="white-space:nowrap;">
+        ${r.link ? `<a href="${tkEsc(r.link)}" target="_blank" rel="noopener" style="color:#2563eb;font-size:11.5px;">abrir ↗</a>` : ''}
+        ${r.no_radar
+          ? '<span class="tag">no radar</span>'
+          : `<button class="act-btn mini" onclick="tkPuxarPraRadar(${r.id})" title="Copiar pro meu radar de produtos">➕ Radar</button>`}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function tkPuxarPraRadar(id){
+  const r = tkRankProdutos.find(x => x.id === id);
+  if(!r) return;
+  const comReais = tkComissaoRank(r);
+  try {
+    const [novo] = await tkPost('tiktok_produtos', {
+      produto: r.produto, seller: r.loja, categoria: r.categoria,
+      preco_num: r.preco != null ? r.preco : r.preco_medio,
+      preco: r.preco != null ? tkReais(r.preco) : (r.preco_medio != null ? tkReais(r.preco_medio) : null),
+      unidades_vendidas: r.unidades, avaliacao: r.avaliacao,
+      comissao_percentual: r.comissao_percentual, comissao_reais: comReais,
+      gmv_7d: r.gmv, unidades_7d: r.unidades,
+      link_produto: r.link, fonte: 'kalodata',
+      observacoes: `Puxado do ranking Kalodata de ${tkData(r.data_ref)} (${r.periodo}). Falta colar o link de afiliado do Centro de Afiliados.`
+    });
+    tkProdutos.push(novo);
+    await tkPatch('tiktok_ranking_produtos', id, { no_radar: true });
+    r.no_radar = true;
+    tkRenderTudo();
+  } catch(err){ alert(err.message); }
+}
+
+/* ── PRODUTOS ── */
+function tkRenderFiltrosProduto(){
+  const cats = ["Todas", ...[...new Set(tkProdutos.map(p => p.categoria).filter(Boolean))].sort()];
+  const catHtml = cats.map(c => {
+    const q = c === "Todas" ? tkProdutos.length : tkProdutos.filter(p => p.categoria === c).length;
+    return `<button class="filter-btn ${tkFiltroCategoria===c?'on':''}" onclick="tkSetCategoria(${JSON.stringify(c).replace(/"/g,'&quot;')})">${tkEsc(c)} (${q})</button>`;
+  }).join('');
+  const stHtml = ["Todos", ...TK_STATUS].map(s => {
+    const q = s === "Todos" ? tkProdutos.length : tkProdutos.filter(p => p.status === s).length;
+    return `<button class="filter-btn ${tkFiltroStatus===s?'on':''}" onclick="tkSetStatus('${s}')">${s} (${q})</button>`;
+  }).join('');
+  document.getElementById('tk-prod-filtros').innerHTML =
+    `<span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;">Categoria</span>${catHtml}
+     <span style="width:100%;height:0;"></span>
+     <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;">Status</span>${stHtml}`;
+}
+function tkSetCategoria(c){ tkFiltroCategoria = c; tkRenderFiltrosProduto(); tkRenderProdutos(); }
+function tkSetStatus(s){ tkFiltroStatus = s; tkRenderFiltrosProduto(); tkRenderProdutos(); }
+function tkSort(k){ if(tkSortKey === k) tkSortDir *= -1; else { tkSortKey = k; tkSortDir = -1; } tkRenderProdutos(); }
+function tkLimparBusca(){ tkTextoBusca = ''; document.getElementById('tk-prod-texto').value = ''; tkRenderProdutos(); }
+
+function tkProdutosFiltrados(){
+  let lista = tkProdutos.slice();
+  if(tkFiltroCategoria !== "Todas") lista = lista.filter(p => p.categoria === tkFiltroCategoria);
+  if(tkFiltroStatus    !== "Todos") lista = lista.filter(p => p.status === tkFiltroStatus);
+  if(tkTextoBusca.trim()){
+    const alvo = tkTextoBusca.trim().toLowerCase();
+    lista = lista.filter(p => String(p[tkCampoBusca]||'').toLowerCase().includes(alvo));
+  }
+  lista.sort((a,b) => {
+    const va = a[tkSortKey], vb = b[tkSortKey];
+    if(va == null && vb == null) return 0;
+    if(va == null) return 1;
+    if(vb == null) return -1;
+    const na = parseFloat(va), nb = parseFloat(vb);
+    if(!isNaN(na) && !isNaN(nb) && String(va).trim() !== '' && String(vb).trim() !== '') return (na-nb) * tkSortDir;
+    return String(va).localeCompare(String(vb), 'pt-BR') * tkSortDir;
+  });
+  return lista;
+}
+
+function tkRenderProdutos(){
+  const lista = tkProdutosFiltrados();
+  document.getElementById('tk-prod-sub').textContent =
+    `${lista.length} de ${tkProdutos.length} produto(s) — piso de comissão ${tkReais(TK_COMISSAO_MINIMA)}`;
+  const tbody = document.getElementById('tk-prod-tbody');
+  if(!lista.length){ tbody.innerHTML = '<tr><td colspan="12" class="empty">Nenhum produto nesse filtro.</td></tr>'; return; }
+  tbody.innerHTML = lista.map(p => {
+    const nRot = tkRoteiros.filter(r => r.produto_id === p.id).length;
+    const com  = p.comissao_reais == null ? null : parseFloat(p.comissao_reais);
+    const corCom = com == null ? 'var(--muted)' : (com < TK_COMISSAO_MINIMA ? 'var(--red)' : 'var(--green)');
+    return `
+    <tr class="data-row">
+      <td>
+        <div style="font-weight:600;">${tkEsc(p.produto)}</div>
+        ${p.seller ? `<div style="font-size:10.5px;color:var(--muted);">${tkEsc(p.seller)}${p.amostra_gratis?' · 🎁 amostra grátis':''}</div>` : ''}
+        ${p.angulo ? `<div style="font-size:10.5px;color:var(--muted);margin-top:3px;">💡 ${tkEsc(p.angulo)}</div>` : ''}
+      </td>
+      <td class="wrap-cell">${tkEsc(p.tendencia_nome||'—')}</td>
+      <td class="wrap-cell">${tkEsc(p.categoria||'—')}</td>
+      <td style="font-family:var(--mono);">${p.preco ? tkEsc(p.preco) : (p.preco_num != null ? tkReais(p.preco_num) : '—')}</td>
+      <td style="font-family:var(--mono);">${p.unidades_vendidas != null ? tkNum(p.unidades_vendidas) : '—'}</td>
+      <td style="font-family:var(--mono);">${p.avaliacao != null ? Number(p.avaliacao).toFixed(1)+'⭐' : '—'}</td>
+      <td style="font-family:var(--mono);">${p.comissao_percentual != null ? Number(p.comissao_percentual).toFixed(1)+'%' : '—'}</td>
+      <td style="font-family:var(--mono);font-weight:700;color:${corCom};">${com == null ? '—' : tkReais(com)}</td>
+      <td style="font-family:var(--mono);">${Math.round(p.score||0)}</td>
+      <td><span class="badge b-fonte-${tkEsc(p.fonte||'pesquisa')}">${TK_ROTULO_FONTE[p.fonte]||p.fonte||'—'}</span></td>
+      <td>
+        <select class="op-sel" style="font-size:11px;padding:3px 6px;" onchange="tkMudarStatusProduto(${p.id}, this.value)">
+          ${TK_STATUS.map(s => `<option value="${s}" ${p.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td style="white-space:nowrap;">
+        <button class="act-btn mini" onclick="tkAbrirFormProduto(${p.id})" title="Editar / colar dados do Centro de Afiliados">✏️</button>
+        ${p.link_afiliado ? `<button class="act-btn mini" onclick="tkCopiar('${tkEsc(p.link_afiliado)}')" title="Copiar link de afiliado">🔗</button>` : ''}
+        ${p.link_produto ? `<a href="${tkEsc(p.link_produto)}" target="_blank" rel="noopener" style="color:#2563eb;font-size:11.5px;">abrir ↗</a>` : ''}
+        <button class="act-btn mini" onclick="tkVerRoteiros(${p.id})">🎬 ${nRot}</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function tkMudarStatusProduto(id, status){
+  try { await tkPatch('tiktok_produtos', id, { status });
+    const p = tkProdutos.find(x => x.id === id); if(p) p.status = status;
+    tkRenderStats(); tkRenderFiltrosProduto();
+  } catch(err){ alert(err.message); }
+}
+
+function tkAbrirFormProduto(id){
+  const p = id ? tkProdutos.find(x => x.id === id) : null;
+  const opTend = ['<option value="">— sem tendência —</option>'].concat(
+    tkTendencias.map(t => `<option value="${t.id}" ${p && p.tendencia_id === t.id ? 'selected':''}>${tkEsc(t.tendencia)}</option>`)
+  ).join('');
+  tkModalHTML(`
+    <h3>${p ? 'Editar produto' : 'Novo produto do Centro de Afiliados'}</h3>
+    <p class="section-sub" style="margin-bottom:6px;">Cole os dados como aparecem no Centro de Afiliados do TikTok Shop.</p>
+    <div class="form-grid" style="padding:0;border:none;">
+      <div class="campo" style="grid-column:1/-1;"><label>Produto *</label><input id="f-produto" value="${p?tkAttr(p.produto):''}" placeholder="Nome do produto"></div>
+      <div class="campo"><label>Seller</label><input id="f-seller" value="${p&&p.seller?tkAttr(p.seller):''}"></div>
+      <div class="campo"><label>Categoria</label><input id="f-categoria" value="${p&&p.categoria?tkAttr(p.categoria):''}" placeholder="ex: Calças"></div>
+      <div class="campo"><label>Tendência</label><select id="f-tendencia">${opTend}</select></div>
+      <div class="campo"><label>Preço (R$)</label><input id="f-preco" type="number" step="0.01" value="${p&&p.preco_num!=null?p.preco_num:''}"></div>
+      <div class="campo"><label>Unidades vendidas</label><input id="f-vendidos" type="number" value="${p&&p.unidades_vendidas!=null?p.unidades_vendidas:''}"></div>
+      <div class="campo"><label>Avaliação</label><input id="f-avaliacao" type="number" step="0.1" max="5" value="${p&&p.avaliacao!=null?p.avaliacao:''}"></div>
+      <div class="campo"><label>Comissão %</label><input id="f-compct" type="number" step="0.1" value="${p&&p.comissao_percentual!=null?p.comissao_percentual:''}"></div>
+      <div class="campo"><label>Comissão R$</label><input id="f-comreais" type="number" step="0.01" value="${p&&p.comissao_reais!=null?p.comissao_reais:''}" placeholder="deixe vazio pra calcular"></div>
+      <div class="campo"><label>Amostra grátis</label>
+        <select id="f-amostra"><option value="false" ${p&&!p.amostra_gratis?'selected':''}>não</option><option value="true" ${p&&p.amostra_gratis?'selected':''}>sim</option></select>
+      </div>
+      <div class="campo" style="grid-column:1/-1;"><label>Link do produto</label><input id="f-linkprod" value="${p&&p.link_produto?tkAttr(p.link_produto):''}"></div>
+      <div class="campo" style="grid-column:1/-1;"><label>Link de afiliado</label><input id="f-linkafi" value="${p&&p.link_afiliado?tkAttr(p.link_afiliado):''}"></div>
+      <div class="campo" style="grid-column:1/-1;"><label>Ângulo de conteúdo</label><textarea id="f-angulo" rows="2">${p&&p.angulo?tkEsc(p.angulo):''}</textarea></div>
+      <div class="campo" style="grid-column:1/-1;"><label>Observações</label><textarea id="f-obs" rows="2">${p&&p.observacoes?tkEsc(p.observacoes):''}</textarea></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center;">
+      <button class="act-btn pri" onclick="tkSalvarProduto(${p?p.id:'null'})">💾 Salvar</button>
+      <button class="act-btn" onclick="tkFecharModal()">Cancelar</button>
+      ${p ? `<button class="act-btn" style="margin-left:auto;color:var(--red);" onclick="tkRemoverProduto(${p.id})">🗑️ Excluir</button>` : ''}
+      <span id="f-msg" style="font-size:11px;color:var(--muted);"></span>
+    </div>`);
+}
+
+async function tkSalvarProduto(id){
+  const nome = tkVal('f-produto');
+  const msg  = document.getElementById('f-msg');
+  if(!nome){ msg.textContent = 'O nome do produto é obrigatório.'; return; }
+  const preco = tkNumOrNull('f-preco');
+  const pct   = tkNumOrNull('f-compct');
+  let comReais = tkNumOrNull('f-comreais');
+  if(comReais == null && preco != null && pct != null) comReais = +(preco * pct / 100).toFixed(2);
+  const tendId = tkVal('f-tendencia');
+  const tend = tendId ? tkTendencias.find(t => String(t.id) === tendId) : null;
+  const body = {
+    produto: nome,
+    seller: tkVal('f-seller') || null,
+    categoria: tkVal('f-categoria') || null,
+    tendencia_id: tend ? tend.id : null,
+    tendencia_nome: tend ? tend.tendencia : null,
+    preco_num: preco,
+    preco: preco != null ? tkReais(preco) : null,
+    unidades_vendidas: tkIntOrNull('f-vendidos'),
+    avaliacao: tkNumOrNull('f-avaliacao'),
+    comissao_percentual: pct,
+    comissao_reais: comReais,
+    amostra_gratis: tkVal('f-amostra') === 'true',
+    link_produto: tkVal('f-linkprod') || null,
+    link_afiliado: tkVal('f-linkafi') || null,
+    angulo: tkVal('f-angulo') || null,
+    observacoes: tkVal('f-obs') || null,
+    fonte: 'affiliate_center'
+  };
+  try {
+    if(id){
+      const [atualizado] = await tkPatch('tiktok_produtos', id, body);
+      const i = tkProdutos.findIndex(x => x.id === id); if(i >= 0) tkProdutos[i] = atualizado;
+    } else {
+      const [novo] = await tkPost('tiktok_produtos', body);
+      tkProdutos.push(novo);
+    }
+    tkFecharModal(); tkRenderTudo();
+  } catch(err){ msg.textContent = err.message; }
+}
+
+async function tkRemoverProduto(id){
+  if(!confirm('Excluir esse produto? Os roteiros ligados a ele também vão embora.')) return;
+  try { await tkDelete('tiktok_produtos', id);
+    tkProdutos = tkProdutos.filter(p => p.id !== id);
+    tkRoteiros = tkRoteiros.filter(r => r.produto_id !== id);
+    tkFecharModal(); tkRenderTudo();
+  } catch(err){ alert(err.message); }
+}
+
+/* ── VÍDEOS VIRAIS ── */
+// Quantas vendas cada 1.000 visualizações trazem. É o número que diz
+// quanto alcance um vídeo precisa ter pra pagar o trabalho.
+function tkConversao(v){
+  if(!v.views || v.itens_vendidos == null) return null;
+  return (v.itens_vendidos / v.views) * 1000;
+}
+
+function tkRenderVideos(){
+  const comDados = tkVideos.filter(v => v.views && v.itens_vendidos != null);
+  const views = comDados.reduce((a,v) => a + Number(v.views), 0);
+  const unid  = comDados.reduce((a,v) => a + Number(v.itens_vendidos), 0);
+  const anuncios = tkVideos.filter(v => v.anuncio).length;
+  document.getElementById('tk-vid-sub').textContent = comDados.length
+    ? `${tkVideos.length} vídeo(s) · ${tkNum(views)} views geraram ${tkNum(unid)} vendas — `
+      + `${(unid/views*1000).toFixed(2).replace('.',',')} vendas por 1.000 views · ${anuncios} com anúncio`
+    : `${tkVideos.length} vídeo(s) anotado(s)`;
+  const grid = document.getElementById('tk-vid-grid');
+  if(!tkVideos.length){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1;">
+      Nenhum vídeo anotado ainda.<br>
+      Quando um vídeo de moda feminina passar no seu feed e vender bem, clica em <b>+ Anotar vídeo</b> e guarda o gancho, o formato e o áudio.<br>
+      É esse arquivo que vira roteiro depois.</div>`;
+    return;
+  }
+  grid.innerHTML = tkVideos.map(v => {
+    const conv = tkConversao(v);
+    return `
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        ${v.formato ? `<span class="badge b-num">${tkEsc(v.formato)}</span>` : ''}
+        ${v.anuncio ? '<span class="badge b-saturando" title="Teve verba de anúncio — o alcance não foi orgânico">AD</span>' : ''}
+        ${v.copiar ? '<span class="badge b-pico">copiar</span>' : ''}
+        ${v.views != null ? `<span class="tag">${tkNum(v.views)} views</span>` : ''}
+        ${v.duracao_seg ? `<span class="tag">${v.duracao_seg}s</span>` : ''}
+      </div>
+      ${(v.receita != null || v.itens_vendidos != null || conv != null) ? `
+      <div class="card-meta" style="font-family:var(--mono);font-size:11.5px;display:flex;gap:12px;flex-wrap:wrap;">
+        ${v.receita != null ? `<span>faturou <b style="color:var(--green);">${tkReaisCurto(v.receita)}</b></span>` : ''}
+        ${v.itens_vendidos != null ? `<span>${tkNum(v.itens_vendidos)} vendas</span>` : ''}
+        ${conv != null ? `<span title="Vendas a cada 1.000 visualizações">${conv.toFixed(2).replace('.',',')}/1k views</span>` : ''}
+      </div>` : ''}
+      <div class="card-title">${tkEsc(v.arroba || v.produto_citado || 'vídeo sem @')}</div>
+      ${v.gancho ? `<div class="card-desc" style="font-style:italic;">"${tkEsc(v.gancho)}"</div>` : ''}
+      ${v.produto_citado && v.arroba ? `<div class="card-desc">🛒 ${tkEsc(v.produto_citado)}</div>` : ''}
+      ${v.por_que_funciona ? `<div class="card-desc" style="border-left:2px solid var(--border);padding-left:8px;"><b>Por que funciona:</b> ${tkEsc(v.por_que_funciona)}</div>` : ''}
+      ${v.audio ? `<div class="card-desc">🎵 ${tkEsc(v.audio)}</div>` : ''}
+      <div class="card-actions">
+        ${v.link_video ? `<a class="act-btn mini" href="${tkEsc(v.link_video)}" target="_blank" rel="noopener">▶️ Ver</a>` : ''}
+        <button class="act-btn mini" onclick="tkMarcarCopiar(${v.id}, ${v.copiar ? 'false':'true'})">${v.copiar ? '↩︎ Tirar de copiar' : '⭐ Marcar pra copiar'}</button>
+        <button class="act-btn mini" onclick="tkRemoverVideo(${v.id})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function tkAbrirFormVideo(){
+  const opProd = ['<option value="">— sem produto —</option>']
+    .concat(tkProdutos.map(p => `<option value="${p.id}">${tkEsc(p.produto)}</option>`)).join('');
+  tkModalHTML(`
+    <h3>Anotar vídeo viral</h3>
+    <p class="section-sub" style="margin-bottom:6px;">Guarde o que fez o vídeo funcionar, não só o link.</p>
+    <div class="form-grid" style="padding:0;border:none;">
+      <div class="campo"><label>Perfil (@)</label><input id="v-arroba" placeholder="@perfil"></div>
+      <div class="campo"><label>Formato</label><input id="v-formato" placeholder="GRWM, try-on, review…"></div>
+      <div class="campo"><label>Views</label><input id="v-views" type="number"></div>
+      <div class="campo"><label>Duração (s)</label><input id="v-dur" type="number"></div>
+      <div class="campo"><label>Faturou (R$)</label><input id="v-receita" type="number" step="0.01"></div>
+      <div class="campo"><label>Vendas</label><input id="v-vendas" type="number"></div>
+      <div class="campo"><label>Teve anúncio?</label>
+        <select id="v-ad"><option value="false">não, orgânico</option><option value="true">sim, AD</option></select>
+      </div>
+      <div class="campo" style="grid-column:1/-1;"><label>Link do vídeo</label><input id="v-link" placeholder="https://tiktok.com/…"></div>
+      <div class="campo" style="grid-column:1/-1;"><label>Gancho (3 primeiros segundos)</label><textarea id="v-gancho" rows="2"></textarea></div>
+      <div class="campo" style="grid-column:1/-1;"><label>Por que funciona</label><textarea id="v-porque" rows="2"></textarea></div>
+      <div class="campo"><label>Áudio usado</label><input id="v-audio"></div>
+      <div class="campo"><label>Produto citado</label><input id="v-prodtxt"></div>
+      <div class="campo"><label>Ligar a um produto seu</label><select id="v-prodid">${opProd}</select></div>
+      <div class="campo"><label>Copiar esse formato?</label>
+        <select id="v-copiar"><option value="false">ainda não</option><option value="true">sim, quero copiar</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center;">
+      <button class="act-btn pri" onclick="tkSalvarVideo()">💾 Salvar</button>
+      <button class="act-btn" onclick="tkFecharModal()">Cancelar</button>
+      <span id="v-msg" style="font-size:11px;color:var(--muted);"></span>
+    </div>`);
+}
+
+async function tkSalvarVideo(){
+  const msg = document.getElementById('v-msg');
+  const arroba = tkVal('v-arroba'), link = tkVal('v-link');
+  if(!arroba && !link){ msg.textContent = 'Informe pelo menos o @ ou o link do vídeo.'; return; }
+  const prodId = tkVal('v-prodid');
+  const body = {
+    arroba: arroba ? (arroba.startsWith('@') ? arroba : '@'+arroba) : null,
+    link_video: link || null,
+    formato: tkVal('v-formato') || null,
+    views: tkIntOrNull('v-views'),
+    duracao_seg: tkIntOrNull('v-dur'),
+    receita: tkNumOrNull('v-receita'),
+    itens_vendidos: tkIntOrNull('v-vendas'),
+    anuncio: tkVal('v-ad') === 'true',
+    gancho: tkVal('v-gancho') || null,
+    por_que_funciona: tkVal('v-porque') || null,
+    audio: tkVal('v-audio') || null,
+    produto_citado: tkVal('v-prodtxt') || null,
+    produto_id: prodId ? Number(prodId) : null,
+    copiar: tkVal('v-copiar') === 'true'
+  };
+  try {
+    const [novo] = await tkPost('tiktok_videos', body);
+    tkVideos.unshift(novo);
+    tkFecharModal(); tkRenderStats(); tkRenderVideos();
+  } catch(err){ msg.textContent = err.message; }
+}
+
+async function tkMarcarCopiar(id, valor){
+  try { await tkPatch('tiktok_videos', id, { copiar: valor });
+    const v = tkVideos.find(x => x.id === id); if(v) v.copiar = valor;
+    tkRenderVideos();
+  } catch(err){ alert(err.message); }
+}
+async function tkRemoverVideo(id){
+  if(!confirm('Remover esse vídeo da lista?')) return;
+  try { await tkDelete('tiktok_videos', id);
+    tkVideos = tkVideos.filter(v => v.id !== id); tkRenderStats(); tkRenderVideos();
+  } catch(err){ alert(err.message); }
+}
+
+/* ── ROTEIROS ── */
+function tkRenderFiltrosRoteiro(){
+  document.getElementById('tk-rot-filtros').innerHTML = ["Todos", ...TK_ROT_STATUS].map(s => {
+    const n = s === "Todos" ? tkRoteiros.length : tkRoteiros.filter(r => r.status === s).length;
+    return `<button class="filter-btn ${tkFiltroRoteiro===s?'on':''}" onclick="tkSetRoteiro('${s}')">${s==="Todos"?"Todos":TK_ROTULO_ROT[s]} (${n})</button>`;
+  }).join('');
+}
+function tkSetRoteiro(s){ tkFiltroRoteiro = s; tkRenderFiltrosRoteiro(); tkRenderRoteiros(); }
+
+function tkRenderRoteiros(){
+  const lista = tkRoteiros.filter(r => tkFiltroRoteiro === "Todos" || r.status === tkFiltroRoteiro);
+  document.getElementById('tk-rot-sub').textContent = `${lista.length} de ${tkRoteiros.length} roteiro(s)`;
+  const grid = document.getElementById('tk-rot-grid');
+  if(!lista.length){ grid.innerHTML = '<div class="empty">Nenhum roteiro nesse filtro.</div>'; return; }
+  grid.innerHTML = lista.map(r => `
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span class="badge b-num">${tkEsc(r.formato||'vídeo')}</span>
+        <span class="tag">${TK_ROTULO_ROT[r.status]||r.status}</span>
+        ${r.duracao_seg ? `<span class="tag">${r.duracao_seg}s</span>` : ''}
+      </div>
+      <div class="card-title">${tkEsc(r.titulo)}</div>
+      <div class="card-desc" style="font-style:italic;">"${tkEsc(r.gancho||'')}"</div>
+      <div class="card-desc">🛒 ${tkEsc(r.produto_nome||'—')}</div>
+      <div class="card-actions">
+        <button class="act-btn mini" onclick="tkAbrirRoteiro(${r.id})">📄 Abrir roteiro</button>
+        <select class="op-sel" style="font-size:11px;padding:3px 6px;" onchange="tkMudarStatusRoteiro(${r.id}, this.value)">
+          ${TK_ROT_STATUS.map(s => `<option value="${s}" ${r.status===s?'selected':''}>${TK_ROTULO_ROT[s]}</option>`).join('')}
+        </select>
+      </div>
+    </div>`).join('');
+}
+
+async function tkMudarStatusRoteiro(id, status){
+  try {
+    const body = { status };
+    if(status === 'postado') body.data_postagem = new Date().toISOString().slice(0,10);
+    await tkPatch('tiktok_roteiros', id, body);
+    const r = tkRoteiros.find(x => x.id === id); if(r) Object.assign(r, body);
+    tkRenderStats(); tkRenderFiltrosRoteiro();
+  } catch(err){ alert(err.message); }
+}
+
+function tkVerRoteiros(produtoId){
+  const rs = tkRoteiros.filter(r => r.produto_id === produtoId);
+  const p  = tkProdutos.find(x => x.id === produtoId);
+  if(!rs.length){
+    tkModalHTML(`<h3>${tkEsc(p ? p.produto : 'Produto')}</h3>
+      <p style="font-size:13px;color:var(--muted);margin-top:10px;">Nenhum roteiro pra esse produto ainda. A rotina diária escreve roteiros pros produtos de maior score.</p>`);
+    return;
+  }
+  if(rs.length === 1){ tkAbrirRoteiro(rs[0].id); return; }
+  tkModalHTML(`<h3>${tkEsc(p ? p.produto : 'Produto')}</h3>
+    <p class="section-sub" style="margin-bottom:12px;">${rs.length} roteiros</p>
+    ${rs.map(r => `<div class="roteiro-bloco" style="cursor:pointer;" onclick="tkAbrirRoteiro(${r.id})">
+        <h4>${tkEsc(r.formato||'vídeo')} · ${TK_ROTULO_ROT[r.status]||r.status}</h4>
+        <p style="font-weight:600;">${tkEsc(r.titulo)}</p>
+      </div>`).join('')}`);
+}
+
+function tkAbrirRoteiro(id){
+  const r = tkRoteiros.find(x => x.id === id); if(!r) return;
+  const texto = [
+    r.titulo, '',
+    'GANCHO (3 primeiros segundos): ' + (r.gancho||''), '',
+    'ROTEIRO:', r.roteiro||'', '',
+    'CTA: ' + (r.cta||''), '',
+    'ÁUDIO: ' + (r.audio_sugerido||''), '',
+    (r.hashtags||[]).join(' ')
+  ].join('\n');
+  tkModalHTML(`
+    <h3>${tkEsc(r.titulo)}</h3>
+    <p class="section-sub">${tkEsc(r.formato||'vídeo')}${r.duracao_seg ? ' · ~'+r.duracao_seg+'s' : ''} · ${tkEsc(r.produto_nome||'')}</p>
+    <div class="roteiro-bloco"><h4>Gancho — 3 primeiros segundos</h4><p>${tkEsc(r.gancho||'')}</p></div>
+    <div class="roteiro-bloco"><h4>Roteiro</h4><p>${tkEsc(r.roteiro||'')}</p></div>
+    <div class="roteiro-bloco"><h4>CTA</h4><p>${tkEsc(r.cta||'')}</p></div>
+    ${r.audio_sugerido ? `<div class="roteiro-bloco"><h4>Áudio sugerido</h4><p>${tkEsc(r.audio_sugerido)}</p></div>` : ''}
+    <div class="tags" style="margin:10px 0;">${(r.hashtags||[]).map(h => `<span class="tag">${tkEsc(h)}</span>`).join('')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+      <button class="act-btn pri" onclick="tkCopiar(${JSON.stringify(texto).replace(/"/g,'&quot;')})">⧉ Copiar roteiro inteiro</button>
+      <button class="act-btn" onclick="tkFecharModal()">Fechar</button>
+    </div>`);
+}
+
+/* ── CRIADORES ── */
+function tkRenderCriadores(){
+  const tbody = document.getElementById('tk-cri-tbody');
+  if(!tkCriadores.length){
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Nenhum perfil ainda. Adicione os @ de moda feminina que você já acompanha.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = tkCriadores.map(c => `
+    <tr class="data-row">
+      <td style="font-weight:600;">${tkEsc(c.arroba)}</td>
+      <td class="wrap-cell">${tkEsc(c.nome||'—')}</td>
+      <td class="wrap-cell">${tkEsc(c.nicho||'—')}</td>
+      <td>${tkEsc(c.tipo||'—')}</td>
+      <td style="font-family:var(--mono);">${c.seguidores ? tkNum(c.seguidores) : '—'}</td>
+      <td>${c.link ? `<a href="${tkEsc(c.link)}" target="_blank" rel="noopener" style="color:#2563eb;">abrir ↗</a>` : '—'}</td>
+      <td><button class="act-btn mini" onclick="tkRemoverCriador(${c.id})">🗑️</button></td>
+    </tr>`).join('');
+}
+
+async function tkAddCriador(){
+  const arroba = tkVal('tk-cri-arroba');
+  const msg = document.getElementById('tk-cri-msg');
+  if(!arroba){ msg.textContent = 'Informe o @ do perfil.'; return; }
+  const body = {
+    arroba: arroba.startsWith('@') ? arroba : '@'+arroba,
+    nome:  tkVal('tk-cri-nome')  || null,
+    nicho: tkVal('tk-cri-nicho') || null,
+    tipo:  tkVal('tk-cri-tipo'),
+    seguidores: tkIntOrNull('tk-cri-seg'),
+    link:  tkVal('tk-cri-link')  || null,
+    ultima_revisao: new Date().toISOString().slice(0,10)
+  };
+  try {
+    const [novo] = await tkPost('tiktok_criadores', body);
+    tkCriadores.push(novo);
+    tkCriadores.sort((a,b) => a.arroba.localeCompare(b.arroba));
+    ['tk-cri-arroba','tk-cri-nome','tk-cri-nicho','tk-cri-seg','tk-cri-link'].forEach(i => document.getElementById(i).value = '');
+    msg.textContent = 'Adicionado.'; setTimeout(() => msg.textContent = '', 2500);
+    tkRenderCriadores();
+  } catch(err){ msg.textContent = err.message; }
+}
+async function tkRemoverCriador(id){
+  if(!confirm('Remover esse perfil da lista?')) return;
+  try { await tkDelete('tiktok_criadores', id);
+    tkCriadores = tkCriadores.filter(c => c.id !== id); tkRenderCriadores();
+  } catch(err){ alert(err.message); }
+}
+
+/* ── UTIL ── */
+function tkModalHTML(html){
+  document.getElementById('tk-modal').innerHTML =
+    `<button class="modal-close" onclick="tkFecharModal()">×</button>` + html;
+  document.getElementById('tk-modal-bg').classList.add('open');
+}
+function tkFecharModal(){ document.getElementById('tk-modal-bg').classList.remove('open'); }
+document.addEventListener('keydown', e => { if(e.key === 'Escape') tkFecharModal(); });
+
+function tkCopiar(texto){
+  const finalizar = ok => {
+    const aviso = document.createElement('div');
+    aviso.textContent = ok ? '✓ Copiado' : '✕ Não consegui copiar';
+    aviso.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2d2b27;color:#f0efec;padding:8px 16px;border-radius:20px;font-size:12px;z-index:300;';
+    document.body.appendChild(aviso);
+    setTimeout(() => aviso.remove(), 1800);
+  };
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(texto).then(() => finalizar(true), () => finalizar(false));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = texto; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    ta.remove(); finalizar(ok);
+  }
+}
+
+document.getElementById('tk-prod-campo').addEventListener('change', e => { tkCampoBusca = e.target.value; tkRenderProdutos(); });
+document.getElementById('tk-prod-texto').addEventListener('input', e => { tkTextoBusca = e.target.value; tkRenderProdutos(); });
+</script>
+
+<script>
+// ── Modo escuro (persistido, mesma chave usada no AfiliDash) ──
+function toggleDarkMode(forcarEstado) {
+  const btn = document.getElementById('btn-dark-mode');
+  if (!btn) return;
+  const ativo = forcarEstado !== undefined ? forcarEstado : !document.body.classList.contains('ad-dark');
+  document.body.classList.toggle('ad-dark', ativo);
+  btn.textContent = ativo ? '☀️ Modo claro' : '🌙 Modo escuro';
+  localStorage.setItem('ad_dark_mode', ativo ? '1' : '0');
+}
+if (localStorage.getItem('ad_dark_mode') === '1') toggleDarkMode(true);
+
+tkLoadAll();
+</script>
+
+</body>
+</html>

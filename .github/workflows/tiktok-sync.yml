@@ -1,0 +1,34 @@
+name: Espiao TikTok - Importar Kalodata
+
+on:
+  push:
+    paths:
+      - 'dados-kalodata/**'
+      - 'tiktok-sync.py'
+  workflow_dispatch:
+    inputs:
+      periodo:
+        description: 'Periodo do export (1d, 7d, 30d, 90d)'
+        required: false
+        default: '7d'
+
+jobs:
+  importar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar openpyxl (para exports em Excel)
+        run: pip install --quiet openpyxl
+
+      - name: Importar exports do Kalodata
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python tiktok-sync.py --periodo "${{ inputs.periodo || '7d' }}"
