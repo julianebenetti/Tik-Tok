@@ -792,7 +792,7 @@ function tkAbrirFormProduto(id){
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center;">
       <button class="act-btn pri" onclick="tkSalvarProduto(${p?p.id:'null'})">💾 Salvar</button>
       <button class="act-btn" onclick="tkFecharModal()">Cancelar</button>
-      ${p ? `<button class="act-btn" style="margin-left:auto;color:var(--red);" onclick="tkRemoverProduto(${p.id})">🗑️ Excluir</button>` : ''}
+      ${p ? `<button class="act-btn" style="margin-left:auto;color:var(--red);" onclick="tkDescartarProduto(${p.id})">✕ Descartar</button>` : ''}
       <span id="f-msg" style="font-size:11px;color:var(--muted);"></span>
     </div>`);
 }
@@ -838,11 +838,13 @@ async function tkSalvarProduto(id){
   } catch(err){ msg.textContent = err.message; }
 }
 
-async function tkRemoverProduto(id){
-  if(!confirm('Excluir esse produto? Os roteiros ligados a ele também vão embora.')) return;
-  try { await tkDelete('tiktok_produtos', id);
-    tkProdutos = tkProdutos.filter(p => p.id !== id);
-    tkRoteiros = tkRoteiros.filter(r => r.produto_id !== id);
+// Descarta em vez de apagar: some dos filtros de trabalho mas o histórico fica,
+// e a chave anônima da página não precisa de permissão pra destruir linha.
+async function tkDescartarProduto(id){
+  if(!confirm('Descartar esse produto? Ele sai da sua lista de trabalho, '
+            + 'mas continua no histórico e dá pra voltar mudando o status.')) return;
+  try { await tkPatch('tiktok_produtos', id, { status: 'descartado' });
+    const p = tkProdutos.find(x => x.id === id); if(p) p.status = 'descartado';
     tkFecharModal(); tkRenderTudo();
   } catch(err){ alert(err.message); }
 }

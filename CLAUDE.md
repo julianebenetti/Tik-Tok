@@ -12,6 +12,23 @@ Projeto próprio, **sem relação com a mentoria MGD-Benetti**.
 - `dados-kalodata/` — onde os CSV são largados.
 - `.github/workflows/tiktok-sync.yml` — roda o import a cada commit nessa pasta.
 
+## Permissões do Supabase (importante)
+A chave anônima viaja dentro do HTML, que é servido em endereço público no VPS.
+**Não dá pra escondê-la** — deixar o repositório privado não resolve nada, porque
+qualquer pessoa que abrir a página vê a chave no código-fonte. O que dá é limitar o
+que essa chave permite:
+
+- Leitura liberada em todas as tabelas `tiktok_*`.
+- Escrita só onde a página tem botão que salva: status de produto, roteiro e
+  tendência, marcar radar, anotar e apagar vídeo, adicionar e apagar perfil.
+- `tiktok_lojas`, `tiktok_categorias` e `tiktok_importacoes` são somente-leitura pro
+  anônimo: quem escreve nelas é o sync, com a chave de serviço.
+- Apagar produto foi trocado por **descartar** (muda o status). O histórico fica e a
+  chave da página não precisa de permissão pra destruir linha.
+
+Se um dia isso precisar ficar realmente fechado, o caminho é login na página com
+Supabase Auth, não esconder a chave.
+
 ## Secrets do GitHub Actions
 `KALODATA_KEY`, `SUPABASE_URL` e `SUPABASE_KEY`. A chave do Kalodata é mostrada uma
 única vez e gerar outra invalida a anterior na hora — ela nunca vai pro repositório
