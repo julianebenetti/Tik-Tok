@@ -3,6 +3,32 @@
 O script não usa nenhuma biblioteca externa, só a biblioteca padrão do Python 3.
 Não tem `pip install` nesta parte.
 
+## 0. Entrar no servidor
+
+O jeito mais fácil é pelo navegador, sem instalar nada:
+
+1. Entre no **hPanel** da Hostinger.
+2. Vá em **VPS** e clique em **Gerenciar** no seu servidor.
+3. Procure **Terminal do navegador** (Browser terminal) e abra.
+
+Abre uma tela preta onde dá pra digitar. É o servidor.
+
+Quem preferir o terminal do próprio computador usa `ssh root@SEU_IP`, com o IP que
+aparece no painel do VPS.
+
+## 0.1. Achar onde ficam os arquivos do site
+
+Você já publicou o `garimpo-shopee.html` nesse servidor. Ache onde ele está, que é
+a mesma pasta onde a página nova vai:
+
+```bash
+find / -name "garimpo-shopee.html" 2>/dev/null
+```
+
+Anote o caminho que aparecer. Costuma ser algo como `/var/www/html` ou
+`/home/SEU_USUARIO/public_html`. É esse o caminho que vou chamar de PASTA_DO_SITE
+daqui pra frente.
+
 ## 1. Trazer o código
 
 ```bash
@@ -71,13 +97,15 @@ Copie o `espiao-tiktok-moda.html` pra pasta que o servidor web serve, a mesma
 onde já estão a AfiliDash e o `garimpo-shopee.html`.
 
 ```bash
-cp espiao-tiktok-moda.html /var/www/html/     # ajuste o caminho ao seu servidor
+cp espiao-tiktok-moda.html PASTA_DO_SITE/
 ```
+
+Trocando PASTA_DO_SITE pelo caminho que o `find` mostrou no passo 0.1.
 
 Pra atualizar tudo depois de uma mudança no repositório:
 
 ```bash
-cd /opt/espiao-tiktok && git pull && cp espiao-tiktok-moda.html /var/www/html/
+cd /opt/espiao-tiktok && git pull && cp espiao-tiktok-moda.html PASTA_DO_SITE/
 ```
 
 ## Onde NÃO colocar a chave
