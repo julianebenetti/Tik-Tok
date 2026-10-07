@@ -26,7 +26,7 @@ Roda 24h no VPS da Hostinger.
 2. **Seu ID:** mande `/start` pro **@userinfobot** e anote o `Id`.
 3. **Instalar no VPS:** hPanel → VPS → **Terminal**, cole:
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/julianebenetti/Tik-Tok/claude/ugc-tiktok-video-editing-7d11hx/central-tiktok/instalar.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/julianebenetti/tik-tok/claude/ugc-tiktok-video-editing-7d11hx/central-tiktok/instalar.sh | bash
    ```
    Ele pede o token e o seu ID. No fim deve aparecer **✅ Central rodando!**
 4. **Criar o grupo:** no Telegram, crie um grupo (ex.: "Central TikTok"), adicione o robô,

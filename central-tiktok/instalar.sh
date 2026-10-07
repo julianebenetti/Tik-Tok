@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Instala (ou atualiza) a Central TikTok no VPS. Rode como root:
-#   curl -fsSL https://raw.githubusercontent.com/julianebenetti/Tik-Tok/claude/ugc-tiktok-video-editing-7d11hx/central-tiktok/instalar.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/julianebenetti/tik-tok/claude/ugc-tiktok-video-editing-7d11hx/central-tiktok/instalar.sh | bash
 set -euo pipefail
 
 RAMO="${RAMO:-claude/ugc-tiktok-video-editing-7d11hx}"
-BASE="https://raw.githubusercontent.com/julianebenetti/Tik-Tok/${RAMO}/central-tiktok"
+BASE="https://raw.githubusercontent.com/julianebenetti/tik-tok/${RAMO}/central-tiktok"
 DIR=/opt/central-tiktok
 ENV=/etc/central-tiktok.env
 

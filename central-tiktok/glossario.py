@@ -27,7 +27,7 @@ from pathlib import Path
 
 GLOSSARIO_URL = os.environ.get(
     "GLOSSARIO_URL",
-    "https://raw.githubusercontent.com/julianebenetti/Tik-Tok/"
+    "https://raw.githubusercontent.com/julianebenetti/tik-tok/"
     "claude/ugc-tiktok-video-editing-7d11hx/central-tiktok/glossario.json")
 LOCAL = Path(__file__).resolve().parent / "glossario.json"
 
