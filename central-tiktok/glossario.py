@@ -39,7 +39,7 @@ CHAMADA_ESPECIAL = {}
 CHAMADA_GENERICA = "Loja • PROMO DO VÍDEO"
 CHAMADA_PLUS = "Loja • PROMO PLUS SIZE"
 CHAMADA_PADRAO = "Loja • PROMO {TERMO}"
-EMOJIS_FINAL = []       # emoji colocado no fim da headline (sorteado), como nos posts da conta
+EMOJIS_FINAL = {}       # ângulo da headline -> emojis sorteados pro fim ("padrao" pros outros ângulos)
 
 # ------------------------------------------------------------------ produtos
 # (palavras-chave sem acento, termo usado na headline, gênero m/f, categoria, é roupa)
@@ -121,8 +121,10 @@ def validar(d):
                 erros.append(f"{cat}: conjunto precisa ter 4 hashtags: {s.get('tags')!r}")
     if len(d.get("quinta_generica") or []) < 2:
         erros.append("quinta_generica precisa de pelo menos 2 hashtags")
-    if not all(isinstance(x, str) and x.strip() for x in d.get("emojis_final") or []):
-        erros.append("emojis_final precisa ser uma lista de textos")
+    em = d.get("emojis_final") or {}
+    listas = [em] if isinstance(em, list) else list(em.values()) if isinstance(em, dict) else [None]
+    if not all(isinstance(lst, list) and all(isinstance(x, str) and x.strip() for x in lst) for lst in listas):
+        erros.append("emojis_final precisa ser {ângulo: [emojis]}")
     if not (d.get("chamadas") or {}).get("generica"):
         erros.append("falta chamadas.generica")
     if erros:
@@ -144,7 +146,8 @@ def aplicar(d):
     CHAMADA_GENERICA = ch["generica"]
     CHAMADA_PLUS = ch.get("plus_size", CHAMADA_PLUS)
     CHAMADA_PADRAO = ch.get("padrao", CHAMADA_PADRAO)
-    EMOJIS_FINAL = list(d.get("emojis_final") or [])
+    em = d.get("emojis_final") or {}
+    EMOJIS_FINAL = {"padrao": list(em)} if isinstance(em, list) else {k: list(v) for k, v in em.items()}
 
 
 def carregar(cache=None, url=GLOSSARIO_URL):
@@ -259,14 +262,15 @@ def escolher_headline(info, preco, evitar_angulo=None, ja_usadas=(), rnd=random)
     melhores = [o for o in ops if o[1] != evitar_angulo] or ops
     angulo = rnd.choice(sorted({a for _, a in melhores}))
     i = rnd.choice([idx for idx, a in melhores if a == angulo])
-    return i, angulo, com_emoji(preencher(HEADLINES[i][1], info, preco), rnd)
+    return i, angulo, com_emoji(preencher(HEADLINES[i][1], info, preco), angulo, rnd)
 
 
-def com_emoji(texto, rnd=random):
-    """Põe um emoji no fim, se a headline ainda não tiver nenhum."""
+def com_emoji(texto, angulo=None, rnd=random):
+    """Põe no fim um emoji que combina com o ângulo da headline, se ela ainda não tiver emoji."""
     tem_emoji = any(ord(c) >= 0x1F000 or 0x2600 <= ord(c) <= 0x27BF for c in texto)
-    if EMOJIS_FINAL and not tem_emoji:
-        return f"{texto} {rnd.choice(EMOJIS_FINAL)}"
+    opcoes = EMOJIS_FINAL.get(angulo) or EMOJIS_FINAL.get("padrao") or []
+    if opcoes and not tem_emoji:
+        return f"{texto} {rnd.choice(opcoes)}"
     return texto
 
 

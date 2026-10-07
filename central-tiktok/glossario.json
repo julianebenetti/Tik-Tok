@@ -426,8 +426,40 @@
     "plus_size": "Loja • PROMO PLUS SIZE",
     "padrao": "Loja • PROMO {TERMO}"
   },
-  "emojis_final": [
-    "😉🤌",
-    "👀"
-  ]
+  "emojis_final": {
+    "preco": [
+      "😱",
+      "💸",
+      "😉🤌"
+    ],
+    "pov": [
+      "👀",
+      "✨",
+      "🛍️"
+    ],
+    "valor": [
+      "🤌✨",
+      "😉🤌",
+      "💅"
+    ],
+    "choque": [
+      "👀",
+      "😱",
+      "🔥"
+    ],
+    "beleza": [
+      "😍",
+      "🤍✨",
+      "🫶"
+    ],
+    "caimento": [
+      "🔥",
+      "💅",
+      "🫶"
+    ],
+    "padrao": [
+      "😉🤌",
+      "👀"
+    ]
+  }
 }

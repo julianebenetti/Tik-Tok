@@ -208,5 +208,6 @@ nem pra print.
 - Regras de produto (palavra-chave → termo/gênero/categoria) ficam no `glossario.py`, não no JSON.
 - Headline na tela = estilo dos posts da @jubenettiindica: TikTok Sans (wdth 110, wght 550), branca com
   contorno preto fino, sem fundo, 4,9% da largura, bloco centrado a 61% da altura, quebra em 76% da largura,
-  emoji no fim (`emojis_final` no glossario.json: 😉🤌 e 👀, tirados dos posts dela). Medido num print real;
+  emoji no fim escolhido pelo ângulo da headline (`emojis_final` no glossario.json, ex.: preço → 😱 💸 😉🤌,
+  beleza → 😍 🤍✨ 🫶; "padrao" pros ângulos novos). Medido num print real;
   não voltar pro estilo de caixa branca.
