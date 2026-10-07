@@ -193,6 +193,11 @@ nem pra print.
   Grupo com tópicos Brutos → Editados (aprovação) → Hora de postar → Postados. Corta trechos
   com a modelo parada, escreve a headline na tela, sugere 5 hashtags + chamada do link.
 - 6 posts/dia entre 17h e 22h, sempre em horários quebrados. Vídeos sem áudio.
+- Os vídeos vêm do gerador "IA - Multiplicador Vídeo": vários vídeos do mesmo produto, cada um
+  seguido de uma mensagem com o nome do arquivo `PRODUTO_EM_MAIUSCULAS_G#C#A#_DDMM_timestamp.mp4`
+  (G/C/A = gancho/corpo/CTA da biblioteca de movimentos). O robô junta nome+vídeo sozinho.
+- **Mesmo produto nunca 2 vídeos no mesmo dia**; espalhados pelo mês: intervalo =
+  max(1, min(7, 30 // nº de vídeos do produto)) dias. Headlines não repetem dentro do produto.
 - Postagem: vai pros rascunhos do TikTok (fase 3, depende do app no TikTok for Developers);
   a Juliane valida e escolhe o produto do TikTok Shop. Nunca publicar sem aprovação dela.
 - **Fonte do glossário = página "Prompts do Método UGC"** (claude.ai/artifact/RcWX2zmyEdn4P4voEwX1MV),

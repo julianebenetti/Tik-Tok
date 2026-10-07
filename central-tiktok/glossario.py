@@ -274,6 +274,39 @@ def ler_legenda(texto):
     return (nome or None), preco
 
 
+
+# Nome de arquivo do gerador de vídeos, ex.:
+#   CONJUNTO_BIQUINI_FEMININO_COM_SAIDA_G1C2A1_0510_1791245116165.mp4
+#   → produto "Conjunto biquini feminino com saida", sequência "G1C2A1"
+RE_ARQUIVO = re.compile(r"^\s*([A-Za-z0-9À-ÿ_\-]+?)\.(mp4|mov|m4v|webm)\s*$", re.I)
+RE_SEQUENCIA = re.compile(r"^G\d+C\d+(A|CTA)\d+$", re.I)
+
+
+def ler_nome_arquivo(texto):
+    """Retorna (produto, sequencia) se o texto for um nome de arquivo de vídeo, senão None."""
+    m = RE_ARQUIVO.match(texto or "")
+    if not m:
+        return None
+    partes = [p for p in re.split(r"[_\-]+", m.group(1)) if p]
+    sequencia = None
+    # tira do fim: números (timestamp, data) e o código G#C#A#
+    while partes and (partes[-1].isdigit() or RE_SEQUENCIA.match(partes[-1])):
+        p = partes.pop()
+        if RE_SEQUENCIA.match(p):
+            sequencia = p.upper()
+    if not partes or not any(c.isalpha() for c in "".join(partes)):
+        return None
+    # sem o código G#C#A#, só aceita no formato do gerador (MAIÚSCULAS_COM_UNDERLINE)
+    if not sequencia and not (len(partes) >= 2 and m.group(1).isupper()):
+        return None
+    nome = " ".join(partes).lower()
+    return nome[0].upper() + nome[1:], sequencia
+
+
+def chave_produto(nome):
+    """Mesma chave pra variações de escrita do mesmo produto."""
+    return re.sub(r"[^a-z0-9]+", " ", sem_acento(nome or "")).strip()
+
 aplicar(json.loads(LOCAL.read_text(encoding="utf-8")))
 
 if __name__ == "__main__":

@@ -50,6 +50,8 @@ LIMITE_DOWNLOAD = 20 * 1024 * 1024
 
 POSTS_POR_DIA = 6
 JANELA = (17 * 60, 22 * 60)          # 17h às 22h, em minutos
+ESPERA_NOME = 30                      # segundos esperando a mensagem com o nome do arquivo
+MAX_INTERVALO = 7                     # no máximo 1 semana entre vídeos do mesmo produto
 DIAS_GUARDAR = 3                      # apaga arquivos de postados/descartados depois disso
 TOPICOS = [("brutos", "📥 Brutos"), ("editados", "✂️ Editados"),
            ("hora", "⏰ Hora de postar"), ("postados", "🚀 Postados")]
@@ -57,6 +59,7 @@ DIAS_SEMANA = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
 
 fila = queue.Queue()
 legendas_album = {}                   # media_group_id -> legenda do álbum
+nomes_soltos = {}                     # chat_id -> (produto, sequencia, msg_id, hora) esperando um vídeo
 
 
 # =================================================================== banco
@@ -73,6 +76,11 @@ class Banco:
             hashtags TEXT, chamada TEXT, dur_orig REAL, dur_final REAL, cortes INTEGER,
             base TEXT, final TEXT, editado_msg INTEGER, slot TEXT, hora_msg INTEGER,
             criado REAL, atualizado REAL)""")
+        for col in ("chave TEXT", "sequencia TEXT", "nome_msg INTEGER"):   # colunas novas
+            try:
+                self.exec(f"ALTER TABLE videos ADD COLUMN {col}")
+            except sqlite3.OperationalError:
+                pass
 
     def exec(self, sql, params=()):
         with self.trava:
@@ -194,16 +202,31 @@ def slots_do_dia(dia):
     return res
 
 
-def proximo_slot():
+def intervalo_produto(chave):
+    """Dias mínimos entre dois vídeos do mesmo produto: espalha os vídeos pelo mês.
+    11 vídeos → a cada 2 dias · 4 vídeos → a cada 7 · 40 vídeos → todo dia (nunca 2 no mesmo dia)."""
+    n = db.exec("SELECT COUNT(*) AS n FROM videos WHERE chave=? AND status NOT IN ('descartado','erro')",
+                (chave,))[0]["n"]
+    return max(1, min(MAX_INTERVALO, 30 // max(n, 1)))
+
+
+def proximo_slot(vid):
+    v = db.video(vid)
     ocupados = {r["slot"] for r in db.exec(
-        "SELECT slot FROM videos WHERE slot IS NOT NULL AND status IN ('agendado','na_hora','postado')")}
+        "SELECT slot FROM videos WHERE slot IS NOT NULL AND status IN ('agendado','na_hora','postado') "
+        "AND id != ?", (vid,))}
+    dias_produto = [datetime.strptime(r["slot"][:10], "%Y-%m-%d").date() for r in db.exec(
+        "SELECT slot FROM videos WHERE chave=? AND id != ? AND slot IS NOT NULL "
+        "AND status IN ('agendado','na_hora','postado')", (v["chave"], vid))] if v["chave"] else []
+    gap = intervalo_produto(v["chave"]) if v["chave"] else 1
     minimo = agora() + timedelta(minutes=5)
     dia = minimo.date()
-    for _ in range(120):
-        for s in slots_do_dia(dia):
-            chave = s.strftime("%Y-%m-%d %H:%M")
-            if s >= minimo and chave not in ocupados:
-                return chave
+    for _ in range(400):
+        if all(abs((dia - d).days) >= gap for d in dias_produto):
+            for s in slots_do_dia(dia):
+                chave = s.strftime("%Y-%m-%d %H:%M")
+                if s >= minimo and chave not in ocupados:
+                    return chave
         dia += timedelta(days=1)
     raise RuntimeError("agenda cheia")
 
@@ -234,7 +257,8 @@ def legenda_editado(v, extra=""):
         corte = f"✂️ {v['cortes']} corte(s) · {v['dur_orig']:.1f}s → {v['dur_final']:.1f}s"
     else:
         corte = "✂️ sem paradas pra cortar"
-    return (f"🛍 <b>{e(v['produto'])}</b> · {preco_txt(v['preco'])}\n\n"
+    seq = f" · 🎬 {e(v['sequencia'])}" if v["sequencia"] else ""
+    return (f"🛍 <b>{e(v['produto'])}</b> · {preco_txt(v['preco'])}{seq}\n\n"
             f"📝 <b>Na tela:</b> {e(v['headline'])}\n\n"
             f"#️⃣ <code>{e(v['hashtags'])}</code>\n"
             f"🔗 <code>{e(v['chamada'])}</code>\n\n"
@@ -244,8 +268,23 @@ def legenda_editado(v, extra=""):
 
 
 def botoes_aprovacao(vid):
-    return botoes([("✅ Aprovar", f"ap:{vid}"), ("🔄 Outra headline", f"ou:{vid}")],
-                  [("❌ Descartar", f"de:{vid}")])
+    v = db.video(vid)
+    linhas = [[("✅ Aprovar", f"ap:{vid}"), ("🔄 Outra headline", f"ou:{vid}")]]
+    n = db.exec("SELECT COUNT(*) AS n FROM videos WHERE chave=? AND status IN ('aguardando','fila','processando')",
+                (v["chave"],))[0]["n"] if v and v["chave"] else 0
+    if n > 1:
+        linhas.append([("✅✅ Aprovar todos deste produto", f"at:{vid}")])
+    linhas.append([("❌ Descartar", f"de:{vid}")])
+    return botoes(*linhas)
+
+
+def agendar(v):
+    slot = proximo_slot(v["id"])
+    db.atualizar(v["id"], status="agendado", slot=slot)
+    tg_seguro("editMessageCaption", chat_id=v["chat_id"], message_id=v["editado_msg"],
+              caption=legenda_editado(db.video(v["id"]), f"📅 <b>Agendado: {slot_bonito(slot)}</b>"),
+              parse_mode="HTML", reply_markup=botoes([("↩️ Desagendar", f"da:{v['id']}")]))
+    return slot
 
 
 def legenda_hora(v):
@@ -266,7 +305,11 @@ def pasta_video(vid):
 
 def nova_headline(v, info, evitar=None):
     usadas = json.loads(v["usadas"] or "[]")
-    idx, ang, txt = glossario.escolher_headline(info, v["preco"], evitar_angulo=evitar, ja_usadas=usadas)
+    # evita repetir headline já usada em outro vídeo do mesmo produto
+    do_produto = set(usadas)
+    for r in db.exec("SELECT usadas FROM videos WHERE chave=? AND id != ?", (v["chave"], v["id"])):
+        do_produto.update(json.loads(r["usadas"] or "[]"))
+    idx, ang, txt = glossario.escolher_headline(info, v["preco"], evitar_angulo=evitar, ja_usadas=do_produto)
     return idx, ang, txt, json.dumps(usadas + [idx])
 
 
@@ -382,15 +425,14 @@ def agendador():
                 atualizar_glossario()
             # 1) vídeos sem produto: pega a legenda do álbum ou pergunta
             for v in db.exec("SELECT * FROM videos WHERE status='sem_produto' AND pergunta_msg IS NULL "
-                             "AND criado < ?", (time.time() - 4,)):
+                             "AND criado < ?", (time.time() - ESPERA_NOME,)):
                 leg = legendas_album.get(v["album"]) if v["album"] else None
-                nome, preco = glossario.ler_legenda(leg)
-                if nome:
-                    db.atualizar(v["id"], produto=nome, preco=preco, status="fila")
-                    fila.put(("processar", v["id"], None))
+                if leg:
+                    definir_produto(v["id"], *nome_do_texto(leg))
                 else:
                     m = texto(v["chat_id"], "🛍 Qual o produto deste vídeo? <b>Responda esta mensagem</b> com:\n"
-                                            "<code>nome do produto no TikTok | preço</code>",
+                                            "<code>nome do produto no TikTok | preço</code>\n"
+                                            "(ou cole o nome do arquivo, ex.: VESTIDO_LONGO_G1C2A1.mp4)",
                               "brutos", v["bruto_msg"])
                     db.atualizar(v["id"], pergunta_msg=m["message_id"] if m else 0)
             # 2) horários que chegaram
@@ -448,6 +490,25 @@ def configurar(msg):
     texto(chat["id"], "✅ Tudo pronto! Criei os tópicos.\n\n" + AJUDA)
 
 
+def definir_produto(vid, nome, preco=None, sequencia=None, nome_msg=None):
+    campos = dict(produto=nome, preco=preco, chave=glossario.chave_produto(nome), status="fila")
+    if sequencia:
+        campos["sequencia"] = sequencia
+    if nome_msg:
+        campos["nome_msg"] = nome_msg
+    db.atualizar(vid, **campos)
+    fila.put(("processar", vid, None))
+
+
+def nome_do_texto(txt):
+    """Aceita 'nome | preço' ou o nome de arquivo do gerador. → (nome, preco, sequencia)"""
+    arq = glossario.ler_nome_arquivo(txt)
+    if arq:
+        return arq[0], None, arq[1]
+    nome, preco = glossario.ler_legenda(txt)
+    return nome, preco, None
+
+
 def receber_video(msg, video):
     file_id, tamanho = video
     if tamanho and tamanho > LIMITE_DOWNLOAD:
@@ -461,17 +522,27 @@ def receber_video(msg, video):
         # outros vídeos do mesmo álbum que chegaram antes da legenda
         for v in db.exec("SELECT id FROM videos WHERE status='sem_produto' AND album=? "
                          "AND pergunta_msg IS NULL", (album,)):
-            nome, preco = glossario.ler_legenda(leg)
-            db.atualizar(v["id"], produto=nome, preco=preco, status="fila")
-            fila.put(("processar", v["id"], None))
-    nome, preco = glossario.ler_legenda(leg or legendas_album.get(album))
-    status = "fila" if nome else "sem_produto"
-    db.exec("INSERT INTO videos (status, chat_id, bruto_msg, file_id, album, produto, preco, criado, atualizado) "
-            "VALUES (?,?,?,?,?,?,?,?,?)",
-            (status, msg["chat"]["id"], msg["message_id"], file_id, album, nome, preco, time.time(), time.time()))
+            definir_produto(v["id"], *nome_do_texto(leg))
+    chat = msg["chat"]["id"]
+    db.exec("INSERT INTO videos (status, chat_id, bruto_msg, file_id, album, criado, atualizado) "
+            "VALUES ('sem_produto',?,?,?,?,?,?)", (chat, msg["message_id"], file_id, album, time.time(), time.time()))
     vid = db.exec("SELECT last_insert_rowid() AS id")[0]["id"]
+
+    # de onde vem o nome do produto, em ordem de preferência
+    nome = preco = seq = None
+    if leg or legendas_album.get(album):
+        nome, preco, seq = nome_do_texto(leg or legendas_album.get(album))
+    if not nome:                                   # nome do arquivo anexado ao próprio vídeo
+        arq = glossario.ler_nome_arquivo((msg.get("video") or msg.get("document") or {}).get("file_name"))
+        if arq and arq[1]:
+            nome, seq = arq
+    solto = nomes_soltos.get(chat)
+    if not nome and solto and time.time() - solto[3] < ESPERA_NOME:   # nome chegou antes do vídeo
+        nome, seq = solto[0], solto[1]
+        del nomes_soltos[chat]
     if nome:
-        fila.put(("processar", vid, None))
+        definir_produto(vid, nome, preco, seq)
+    # senão espera a próxima mensagem com o nome do arquivo (ou pergunta depois de ESPERA_NOME s)
 
 
 def pegar_video(msg):
@@ -510,8 +581,11 @@ def tratar_mensagem(msg):
         texto(chat_id, AJUDA, responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"))
         return
     if cmd == "/agenda":
-        linhas = [f"• {slot_bonito(v['slot'])} — {e(v['produto'])}" for v in db.exec(
-            "SELECT * FROM videos WHERE status='agendado' ORDER BY slot")]
+        ag = db.exec("SELECT * FROM videos WHERE status='agendado' ORDER BY slot")
+        linhas = [f"• {slot_bonito(v['slot'])} — {e(v['produto'])}" for v in ag[:15]]
+        if len(ag) > 15:
+            ultimo = slot_bonito(ag[-1]["slot"])
+            linhas.append(f"… e mais {len(ag) - 15} (até {ultimo})")
         aguardando = db.exec("SELECT COUNT(*) AS n FROM videos WHERE status='aguardando'")[0]["n"]
         corpo = "\n".join(linhas) or "Nada agendado ainda."
         texto(chat_id, f"📅 <b>Agenda</b>\n{corpo}\n\n⏳ Esperando aprovação: {aguardando}",
@@ -549,11 +623,18 @@ def tratar_mensagem(msg):
             r = db.exec("SELECT * FROM videos WHERE status='sem_produto' AND (pergunta_msg=? OR bruto_msg=?)",
                         (resposta, resposta))
             if r:
-                nome, preco = glossario.ler_legenda(txt)
-                db.atualizar(r[0]["id"], produto=nome, preco=preco, status="fila")
-                fila.put(("processar", r[0]["id"], None))
+                definir_produto(r[0]["id"], *nome_do_texto(txt), nome_msg=msg["message_id"])
                 tg_seguro("setMessageReaction", chat_id=chat_id, message_id=msg["message_id"],
                           reaction=[{"type": "emoji", "emoji": "👌"}])
+        elif txt and glossario.ler_nome_arquivo(txt):
+            # nome do arquivo logo abaixo do vídeo → vale pro último vídeo sem produto acima dele
+            nome, seq = glossario.ler_nome_arquivo(txt)
+            r = db.exec("SELECT id FROM videos WHERE chat_id=? AND status='sem_produto' AND bruto_msg < ? "
+                        "ORDER BY bruto_msg DESC LIMIT 1", (chat_id, msg["message_id"]))
+            if r:
+                definir_produto(r[0]["id"], nome, None, seq, nome_msg=msg["message_id"])
+            else:
+                nomes_soltos[chat_id] = (nome, seq, msg["message_id"], time.time())
     elif thread == topico("editados") and txt and resposta:
         r = db.exec("SELECT * FROM videos WHERE editado_msg=? AND status='aguardando'", (resposta,))
         if r:
@@ -573,12 +654,18 @@ def tratar_botao(cb):
     if not v:
         aviso = "Vídeo não encontrado"
     elif acao == "ap" and v["status"] == "aguardando":
-        slot = proximo_slot()
-        db.atualizar(v["id"], status="agendado", slot=slot)
-        tg_seguro("editMessageCaption", chat_id=v["chat_id"], message_id=v["editado_msg"],
-                  caption=legenda_editado(db.video(v["id"]), f"📅 <b>Agendado: {slot_bonito(slot)}</b>"),
-                  parse_mode="HTML", reply_markup=botoes([("↩️ Desagendar", f"da:{v['id']}")]))
-        aviso = f"Agendado: {slot_bonito(slot)}"
+        aviso = f"Agendado: {slot_bonito(agendar(v))}"
+    elif acao == "at" and v["status"] == "aguardando":
+        todos = db.exec("SELECT * FROM videos WHERE chave=? AND status='aguardando' ORDER BY id", (v["chave"],))
+        slots = [agendar(x) for x in todos]
+        pendentes = db.exec("SELECT COUNT(*) AS n FROM videos WHERE chave=? AND status IN ('fila','processando')",
+                            (v["chave"],))[0]["n"]
+        aviso = f"{len(slots)} agendados, de {slot_bonito(min(slots))} até {slot_bonito(max(slots))}"
+        resumo = f"✅ <b>{len(slots)} vídeos de {e(v['produto'])}</b> agendados, um por dia espaçado:\n" + \
+                 "\n".join(f"• {slot_bonito(x)}" for x in sorted(slots))
+        if pendentes:
+            resumo += f"\n\n⏳ Ainda tem {pendentes} sendo editado(s) — aprove quando chegarem."
+        texto(v["chat_id"], resumo, "editados")
     elif acao == "ou" and v["status"] == "aguardando":
         fila.put(("headline", v["id"], None))
         aviso = "Gerando outra headline..."
@@ -600,8 +687,8 @@ def tratar_botao(cb):
         tg_seguro("deleteMessage", chat_id=v["chat_id"], message_id=v["hora_msg"])
         aviso = "Boa! 🚀"
     elif acao == "re" and v["status"] == "na_hora":
-        db.atualizar(v["id"], status="aguardando")       # libera o horário atual
-        slot = proximo_slot()
+        db.atualizar(v["id"], status="aguardando", slot=None)   # libera o horário atual
+        slot = proximo_slot(v["id"])
         db.atualizar(v["id"], status="agendado", slot=slot)
         tg_seguro("deleteMessage", chat_id=v["chat_id"], message_id=v["hora_msg"])
         aviso = f"Reagendado: {slot_bonito(slot)}"

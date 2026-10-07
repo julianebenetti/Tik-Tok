@@ -7,13 +7,21 @@ Roda 24h no VPS da Hostinger.
 📥 Brutos  →  ✂️ Editados (aprovação)  →  ⏰ Hora de postar  →  🚀 Postados
 ```
 
-1. Você manda o vídeo cru em **📥 Brutos** com a legenda `nome do produto no TikTok | preço`
-   (preço opcional; vários vídeos do mesmo produto podem ir num álbum só).
+1. Você encaminha os vídeos crus pra **📥 Brutos**. O nome do produto pode vir de 3 jeitos:
+   - **do jeito que o gerador manda**: vídeo e, logo abaixo, a mensagem com o nome do arquivo
+     (`CONJUNTO_BIQUINI_FEMININO_COM_SAIDA_G1C2A1_0510_….mp4`). O robô junta cada nome com o
+     vídeo de cima e guarda a sequência (G1C2A1 = gancho 1 + corpo 2 + CTA 1);
+   - na legenda do vídeo: `nome do produto no TikTok | preço` (preço opcional);
+   - se não vier nada em 30 segundos, o robô pergunta.
 2. O robô corta os trechos em que a modelo fica parada, escreve a **headline na tela**
    (do glossário do Método UGC) e sugere **5 hashtags** + a **chamada do link**.
    Ele posta em **✂️ Editados** com os botões **Aprovar · Outra headline · Descartar**.
    Pra usar uma headline sua, é só responder o vídeo com o texto.
 3. Aprovados entram na agenda: **6 por dia entre 17h e 22h**, em horários quebrados.
+   **Vídeos do mesmo produto nunca caem no mesmo dia** e são espalhados pelo mês
+   (11 vídeos → um a cada 2 dias; 5 vídeos → um a cada 6 dias; no máximo 7 dias de intervalo).
+   O botão **✅✅ Aprovar todos deste produto** agenda todos de uma vez, já espaçados.
+   As headlines não se repetem entre os vídeos do mesmo produto.
 4. No horário, o vídeo chega em **⏰ Hora de postar** com a legenda pra copiar.
    Você posta no TikTok, escolhe o produto do TikTok Shop e toca em **Postei**.
 
