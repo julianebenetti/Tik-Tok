@@ -22,16 +22,34 @@ for f in central.py cortar_parados.py glossario.py glossario.json texto_tela.py 
 done
 id centraltiktok >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin centraltiktok
 
-if [ ! -f "$ENV" ]; then
+# lê o que já foi salvo (se houver) e pergunta só o que estiver faltando ou errado
+TOKEN=""; IDS=""
+[ -f "$ENV" ] && . "$ENV" && TOKEN="${TELEGRAM_BOT_TOKEN:-}" && IDS="${USUARIOS_PERMITIDOS:-}"
+
+token_ok() {
+  [[ "$1" =~ ^[0-9]+:[A-Za-z0-9_-]{30,}$ ]] && curl -fsS "https://api.telegram.org/bot$1/getMe" >/dev/null 2>&1
+}
+
+until token_ok "$TOKEN"; do
+  [ -n "$TOKEN" ] && echo "⚠️  Esse token não funcionou. Confira se copiou ele inteiro."
   echo
-  echo "Cole o token que o @BotFather te deu (não aparece enquanto digita) e aperte Enter:"
-  read -rs TOKEN < /dev/tty; echo
-  echo "Agora o seu ID do Telegram (mande /start pro @userinfobot pra descobrir):"
+  echo "Cole o token que o @BotFather te deu (ex.: 7123456789:AAH...) e aperte Enter."
+  echo "Dica: no terminal do navegador, cole com o botão direito do mouse ou Ctrl+Shift+V."
+  read -r TOKEN < /dev/tty
+  TOKEN="$(echo "$TOKEN" | tr -d '[:space:]')"
+done
+echo "✅ Token aceito: robô @$(curl -fsS "https://api.telegram.org/bot$TOKEN/getMe" | sed -n 's/.*"username":"\([^"]*\)".*/\1/p')"
+
+until [[ "$IDS" =~ ^[0-9]+(,[0-9]+)*$ ]]; do
+  echo
+  echo "Agora o seu ID do Telegram (mande /start pro @userinfobot pra descobrir) e aperte Enter:"
   read -r IDS < /dev/tty
-  umask 077
-  printf 'TELEGRAM_BOT_TOKEN=%s\nUSUARIOS_PERMITIDOS=%s\n' "$TOKEN" "$IDS" > "$ENV"
-  chmod 600 "$ENV"
-fi
+  IDS="$(echo "$IDS" | tr -d '[:space:]')"
+done
+
+umask 077
+printf 'TELEGRAM_BOT_TOKEN=%s\nUSUARIOS_PERMITIDOS=%s\n' "$TOKEN" "$IDS" > "$ENV"
+chmod 600 "$ENV"
 
 cat > /etc/systemd/system/central-tiktok.service <<UNIT
 [Unit]
