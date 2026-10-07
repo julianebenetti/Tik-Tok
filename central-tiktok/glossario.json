@@ -1,0 +1,429 @@
+{
+  "_sobre": "Glossário da Central TikTok. Fonte: página 'Prompts do Método UGC' (https://claude.ai/artifact/RcWX2zmyEdn4P4voEwX1MV). Sincronizado pela rotina diária — não editar à mão sem atualizar a página também.",
+  "atualizado": "2026-10-07",
+  "headlines": [
+    {
+      "angulo": "preco",
+      "texto": "SEM ACREDITAR na beleza {desse} {produto} e o quanto tá custando",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "preco",
+      "texto": "Ainda sem acreditar que eu paguei menos de {menos} reais {nesse} {produto}",
+      "precisa_preco": true,
+      "so_roupa": false
+    },
+    {
+      "angulo": "preco",
+      "texto": "sem ACREDITAR no valor que eu paguei {nesse} {produto}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "preco",
+      "texto": "IMPACTADA com o valor que eu paguei {nesse} {produto} lind{o}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "preco",
+      "texto": "NINGUÉM acredita quando eu falo que paguei apenas {preco} reais {nesse} {produto}",
+      "precisa_preco": true,
+      "so_roupa": false
+    },
+    {
+      "angulo": "preco",
+      "texto": "eu JURO que achei que {esse} {produto} seria muito mais car{o}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "preco",
+      "texto": "impossível acreditar no preço {desse} {produto}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "pov",
+      "texto": "POV: você encontrou {o} {produto} perfeit{o} quase de graça",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "pov",
+      "texto": "POV: você encontrou {o} {produto} mais famos{o} do TikTok praticamente de graça",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "pov",
+      "texto": "POV: você encontrou {o} {produto} das blogueiras por menos de {menos} reais",
+      "precisa_preco": true,
+      "so_roupa": false
+    },
+    {
+      "angulo": "pov",
+      "texto": "POV: você comprou {o} {produto} perfeit{o} por menos de {menos} reais",
+      "precisa_preco": true,
+      "so_roupa": false
+    },
+    {
+      "angulo": "pov",
+      "texto": "POV: você finalmente encontrou {um} {produto} bonit{o} e barat{o}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "pov",
+      "texto": "POV: você encontrou {o} {produto} perfeit{o} no TikTok Shop",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "valor",
+      "texto": "o TikTok Shop acertou MUITO {nesse} {produto}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "valor",
+      "texto": "{esse} {produto} parece MUITO mais car{o} do que realmente é",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "valor",
+      "texto": "o valor {desse} {produto} simplesmente não faz sentido",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "valor",
+      "texto": "{esse} {produto} tá com cara de marca cara",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "valor",
+      "texto": "sinceramente? {esse} {produto} vale MUITO mais do que custa",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "valor",
+      "texto": "{esse} {produto} entrega MUITO mais do que promete",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "valor",
+      "texto": "o tipo de compra que vale CADA centavo",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "choque",
+      "texto": "SIMM, {esse} {produto} está por menos de {menos} reais",
+      "precisa_preco": true,
+      "so_roupa": false
+    },
+    {
+      "angulo": "choque",
+      "texto": "SIMM, {esse} {produto} tá quase de graça",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "choque",
+      "texto": "NÃO COMPRE {esse} {produto} se você não quiser ficar extremamente gst0s@",
+      "precisa_preco": false,
+      "so_roupa": true
+    },
+    {
+      "angulo": "choque",
+      "texto": "COMO ASSIM {esse} {produto} perfeit{o} por esse preço??",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "choque",
+      "texto": "COMO ASSIM ninguém tá falando {desse} {produto}?",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "choque",
+      "texto": "eu não tava preparada pra qualidade {desse} {produto}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "beleza",
+      "texto": "ainda sem acreditar na beleza {desse} {produto}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "beleza",
+      "texto": "{esse} é oficialmente {o} {produto} mais lind{o} que comprei esse mês",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "beleza",
+      "texto": "simplesmente OBCECADA {nesse} {produto}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "beleza",
+      "texto": "sem condições pra beleza {desse} {produto}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "beleza",
+      "texto": "eu comprei sem expectativa e me surpreendi MUITO com {esse} {produto}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "beleza",
+      "texto": "eu finalmente achei {um} {produto} bonit{o}, barat{o} e estilos{o}",
+      "precisa_preco": false,
+      "so_roupa": false
+    },
+    {
+      "angulo": "caimento",
+      "texto": "{esse} {produto} tá deixando qualquer look MUITO mais bonito",
+      "precisa_preco": false,
+      "so_roupa": true
+    },
+    {
+      "angulo": "caimento",
+      "texto": "{esse} {produto} veste PERFEITAMENTE",
+      "precisa_preco": false,
+      "so_roupa": true
+    },
+    {
+      "angulo": "caimento",
+      "texto": "{esse} {produto} ficou ABSURD{O} no corpo",
+      "precisa_preco": false,
+      "so_roupa": true
+    }
+  ],
+  "hashtags": {
+    "cima": [
+      {
+        "chaves": [
+          "blusa",
+          "blusinha",
+          "camisa",
+          "camiseta",
+          "regata",
+          "jaqueta",
+          "casaco"
+        ],
+        "tags": "#blusafeminina #modafeminina #tiktokshop #achadinhos"
+      },
+      {
+        "chaves": [
+          "cropped",
+          "top"
+        ],
+        "tags": "#cropped #modafeminina #achadinhostiktok #lookdodia"
+      },
+      {
+        "chaves": [
+          "body"
+        ],
+        "tags": "#bodyfeminino #modafeminina #tiktokshop #lookdodia"
+      },
+      {
+        "chaves": [
+          "corset",
+          "corselet",
+          "corpete"
+        ],
+        "tags": "#corset #modafeminina #achadinhostiktok #achadinhos"
+      },
+      {
+        "chaves": [],
+        "tags": "#blusafeminina #modafeminina #tiktokshop #achadinhos"
+      }
+    ],
+    "vestido": [
+      {
+        "chaves": [
+          "longo"
+        ],
+        "tags": "#vestidolongo #modafeminina #achadinhostiktok #lookdodia"
+      },
+      {
+        "chaves": [
+          "saia"
+        ],
+        "tags": "#saiafeminina #modafeminina #tiktokshop #achadinhos"
+      },
+      {
+        "chaves": [],
+        "tags": "#vestidofeminino #modafeminina #tiktokshop #lookdodia"
+      }
+    ],
+    "baixo": [
+      {
+        "chaves": [
+          "legging"
+        ],
+        "tags": "#legging #modafitness #tiktokshop #achadinhos"
+      },
+      {
+        "chaves": [
+          "short"
+        ],
+        "tags": "#shortjeans #modafeminina #achadinhostiktok #lookdodia"
+      },
+      {
+        "chaves": [],
+        "tags": "#calcafeminina #modafeminina #tiktokshop #lookdodia"
+      }
+    ],
+    "conjunto": [
+      {
+        "chaves": [
+          "macacao",
+          "macaquinho"
+        ],
+        "tags": "#macacao #modafeminina #achadinhostiktok #achadinhos"
+      },
+      {
+        "chaves": [
+          "look"
+        ],
+        "tags": "#lookcompleto #modafeminina #tiktokshop #lookdodia"
+      },
+      {
+        "chaves": [],
+        "tags": "#conjuntofeminino #modafeminina #tiktokshop #lookdodia"
+      }
+    ],
+    "plussize": [
+      {
+        "chaves": [
+          "vestido"
+        ],
+        "tags": "#vestidoplussize #modaplussize #tiktokshop #lookdodia"
+      },
+      {
+        "chaves": [],
+        "tags": "#modaplussize #plussize #tiktokshop #achadinhos"
+      },
+      {
+        "chaves": [],
+        "tags": "#plussizefashion #modaplussize #achadinhostiktok #lookdodia"
+      }
+    ],
+    "calcado": [
+      {
+        "chaves": [
+          "rasteirinha",
+          "rasteira"
+        ],
+        "tags": "#rasteirinha #modafeminina #achadinhostiktok #achadinhos"
+      },
+      {
+        "chaves": [
+          "sandalia"
+        ],
+        "tags": "#sandalia #modafeminina #tiktokshop #achadinhos"
+      },
+      {
+        "chaves": [
+          "tenis"
+        ],
+        "tags": "#tenisfeminino #modafeminina #achadinhostiktok #lookdodia"
+      },
+      {
+        "chaves": [
+          "bota",
+          "coturno"
+        ],
+        "tags": "#botafeminina #modafeminina #tiktokshop #lookdodia"
+      },
+      {
+        "chaves": [],
+        "tags": "#sandalia #modafeminina #tiktokshop #achadinhos"
+      }
+    ],
+    "bolsa": [
+      {
+        "chaves": [
+          "ombro"
+        ],
+        "tags": "#bolsadeombro #modafeminina #achadinhostiktok #lookdodia"
+      },
+      {
+        "chaves": [],
+        "tags": "#bolsafeminina #modafeminina #tiktokshop #achadinhos"
+      }
+    ],
+    "acessorio": [
+      {
+        "chaves": [],
+        "tags": "#acessorios #modafeminina #tiktokshop #achadinhos"
+      }
+    ],
+    "praia": [
+      {
+        "chaves": [
+          "biquini"
+        ],
+        "tags": "#biquini #modapraia #achadinhostiktok #lookdeverao"
+      },
+      {
+        "chaves": [],
+        "tags": "#modapraia #verao #tiktokshop #achadinhos"
+      }
+    ],
+    "fitness": [
+      {
+        "chaves": [],
+        "tags": "#modafitness #fitnessfeminino #tiktokshop #lookdodia"
+      }
+    ],
+    "geral": [
+      {
+        "chaves": [],
+        "tags": "#achadinhostiktok #tiktokshop #modafeminina #achadinhos"
+      },
+      {
+        "chaves": [],
+        "tags": "#tiktokshop #achadinhos #modafeminina #lookdodia"
+      },
+      {
+        "chaves": [],
+        "tags": "#achadinhosdatiktokshop #modafeminina #tiktokshop #dicasdemoda"
+      }
+    ]
+  },
+  "quinta_generica": [
+    "#achadinhosdatiktokshop",
+    "#dicasdemoda",
+    "#achadinhostiktok",
+    "#lookdodia"
+  ],
+  "chamadas": {
+    "por_produto": {
+      "conjuntinho": "Loja • PROMO CONJUNTO FEMININO",
+      "blusinha": "Loja • PROMO BLUSA FEMININA",
+      "calça": "Loja • PROMO CALÇA FEMININA",
+      "vestido": "Loja • PROMO VESTIDO FEMININO",
+      "tênis": "Loja • PROMO TÊNIS FEMININO",
+      "bolsa": "Loja • PROMO BOLSA FEMININA"
+    },
+    "generica": "Loja • PROMO DO VÍDEO",
+    "plus_size": "Loja • PROMO PLUS SIZE",
+    "padrao": "Loja • PROMO {TERMO}"
+  }
+}

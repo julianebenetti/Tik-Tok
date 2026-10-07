@@ -187,3 +187,17 @@ nem pra print.
   e isso variou pouquíssimo entre vídeos (0,088% a 0,104%). Serve de régua: alcance é o que
   muda o resultado, não a conversão. Quem decide o quanto sobra é a comissão — a R$5,65 por
   venda dá ~R$5,44 por 1.000 views; com 20% de comissão o mesmo alcance dobra pra ~R$10,88.
+
+## Central TikTok (pasta `central-tiktok/`)
+- Robô do Telegram no VPS (serviço `central-tiktok`), **separado da AfiliDash e do MGD-Benetti**.
+  Grupo com tópicos Brutos → Editados (aprovação) → Hora de postar → Postados. Corta trechos
+  com a modelo parada, escreve a headline na tela, sugere 5 hashtags + chamada do link.
+- 6 posts/dia entre 17h e 22h, sempre em horários quebrados. Vídeos sem áudio.
+- Postagem: vai pros rascunhos do TikTok (fase 3, depende do app no TikTok for Developers);
+  a Juliane valida e escolhe o produto do TikTok Shop. Nunca publicar sem aprovação dela.
+- **Fonte do glossário = página "Prompts do Método UGC"** (claude.ai/artifact/RcWX2zmyEdn4P4voEwX1MV),
+  que ela alimenta ao longo do ano. A rotina `Central TikTok — Sincronizar glossário` (5h52)
+  converte a página em `central-tiktok/glossario.json` e faz push no ramo
+  `claude/ugc-tiktok-video-editing-7d11hx`; o robô baixa esse JSON a cada 6h (`/glossario` força).
+  Valide sempre com `python3 central-tiktok/glossario.py --validar` antes de commitar.
+- Regras de produto (palavra-chave → termo/gênero/categoria) ficam no `glossario.py`, não no JSON.
