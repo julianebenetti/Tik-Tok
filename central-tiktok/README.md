@@ -16,7 +16,8 @@ Roda 24h no VPS da Hostinger.
 2. O robô corta os trechos em que a modelo fica parada, escreve a **headline na tela**
    (do glossário do Método UGC) e sugere **5 hashtags** + a **chamada do link**.
    Ele posta em **✂️ Editados** com os botões **Aprovar · Outra headline · Descartar**.
-   Pra usar uma headline sua, é só responder o vídeo com o texto.
+   Pra usar uma headline sua, é só responder o vídeo com o texto. Dá pra trocar a headline
+   em qualquer momento — antes de aprovar, já agendado ou em ⏰ Hora de postar — sem perder o horário.
 3. Aprovados entram na agenda: **6 por dia entre 17h e 22h**, em horários quebrados.
    **Vídeos do mesmo produto nunca caem no mesmo dia** e são espalhados pelo mês
    (11 vídeos → um a cada 2 dias; 5 vídeos → um a cada 6 dias; no máximo 7 dias de intervalo).

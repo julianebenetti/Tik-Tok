@@ -278,22 +278,37 @@ def botoes_aprovacao(vid):
     return botoes(*linhas)
 
 
+def botoes_agendado(vid):
+    return botoes([("↩️ Desagendar", f"da:{vid}"), ("🔄 Outra headline", f"ou:{vid}")])
+
+
+def botoes_hora(vid):
+    return botoes([("✅ Postei", f"po:{vid}"), ("🔁 Reagendar", f"re:{vid}")],
+                  [("🔄 Outra headline", f"ou:{vid}")])
+
+
+def agendado_txt(slot):
+    return f"📅 <b>Agendado: {slot_bonito(slot)}</b>"
+
+
 def agendar(v):
     slot = proximo_slot(v["id"])
     db.atualizar(v["id"], status="agendado", slot=slot)
     tg_seguro("editMessageCaption", chat_id=v["chat_id"], message_id=v["editado_msg"],
-              caption=legenda_editado(db.video(v["id"]), f"📅 <b>Agendado: {slot_bonito(slot)}</b>"),
-              parse_mode="HTML", reply_markup=botoes([("↩️ Desagendar", f"da:{v['id']}")]))
+              caption=legenda_editado(db.video(v["id"]), agendado_txt(slot)),
+              parse_mode="HTML", reply_markup=botoes_agendado(v["id"]))
     return slot
 
 
 def legenda_hora(v):
-    return (f"⏰ <b>Hora de postar!</b> ({slot_bonito(v['slot'])})\n\n"
+    return (f"⏰ <b>Hora de postar!</b> ({slot_bonito(v['slot'])})\n"
+            f"📝 <b>Na tela:</b> {e(v['headline'])}\n\n"
             f"1️⃣ Salve o vídeo e poste no TikTok\n"
             f"2️⃣ Legenda (toque pra copiar):\n<code>{e(v['hashtags'])}</code>\n"
             f"3️⃣ Produto no TikTok Shop: <b>{e(v['produto'])}</b>\n"
             f"4️⃣ Chamada do link: <code>{e(v['chamada'])}</code>\n\n"
-            f"Depois toque em <b>Postei</b> 👇")
+            f"Depois toque em <b>Postei</b> 👇\n"
+            f"💬 <i>Quer outra headline? Responda este vídeo com o texto ou toque em Outra headline.</i>")
 
 
 # =================================================================== processamento
@@ -371,7 +386,19 @@ def refazer_headline(vid, headline_propria=None):
     texto_tela.aplicar_headline(v["base"], novo, headline)
     novo.replace(final)
     db.atualizar(vid, headline=headline, angulo=ang, usadas=usadas)
-    enviar_editado(vid)
+    v = db.video(vid)   # relê: o status pode ter mudado enquanto o vídeo era reescrito
+    if v["status"] == "aguardando":
+        enviar_editado(vid)
+    elif v["status"] == "agendado":
+        res = tg_arquivo("sendVideo", "video", v["final"], chat_id=v["chat_id"],
+                         message_thread_id=topico("editados"), parse_mode="HTML", supports_streaming="true",
+                         caption=legenda_editado(v, agendado_txt(v["slot"])), reply_markup=botoes_agendado(vid))
+        tg_seguro("deleteMessage", chat_id=v["chat_id"], message_id=v["editado_msg"])
+        db.atualizar(vid, editado_msg=res["message_id"])
+    elif v["status"] == "na_hora":
+        antigo = v["hora_msg"]
+        hora_de_postar(v)
+        tg_seguro("deleteMessage", chat_id=v["chat_id"], message_id=antigo)
 
 
 def trabalhador():
@@ -388,9 +415,13 @@ def trabalhador():
             if tarefa == "processar":
                 db.atualizar(vid, status="erro")
             if v:
-                texto(v["chat_id"], f"❌ Deu erro neste vídeo: {e(str(ex)[:300])}",
-                      "brutos" if tarefa == "processar" else "editados",
-                      v["bruto_msg"] if tarefa == "processar" else v["editado_msg"])
+                if tarefa == "processar":
+                    onde, msg_id = "brutos", v["bruto_msg"]
+                elif v["status"] == "na_hora":
+                    onde, msg_id = "hora", v["hora_msg"]
+                else:
+                    onde, msg_id = "editados", v["editado_msg"]
+                texto(v["chat_id"], f"❌ Deu erro neste vídeo: {e(str(ex)[:300])}", onde, msg_id)
         finally:
             fila.task_done()
 
@@ -400,8 +431,7 @@ def hora_de_postar(v):
     res = tg_arquivo("sendVideo", "video", v["final"], chat_id=v["chat_id"],
                      message_thread_id=topico("hora"), caption=legenda_hora(v), parse_mode="HTML",
                      supports_streaming="true",
-                     reply_markup=botoes([("✅ Postei", f"po:{v['id']}"),
-                                          ("🔁 Reagendar", f"re:{v['id']}")]))
+                     reply_markup=botoes_hora(v["id"]))
     db.atualizar(v["id"], status="na_hora", hora_msg=res["message_id"])
 
 
@@ -635,8 +665,10 @@ def tratar_mensagem(msg):
                 definir_produto(r[0]["id"], nome, None, seq, nome_msg=msg["message_id"])
             else:
                 nomes_soltos[chat_id] = (nome, seq, msg["message_id"], time.time())
-    elif thread == topico("editados") and txt and resposta:
-        r = db.exec("SELECT * FROM videos WHERE editado_msg=? AND status='aguardando'", (resposta,))
+    elif thread in (topico("editados"), topico("hora")) and txt and resposta:
+        # resposta com texto ao vídeo = headline nova (antes de aprovar, agendado ou na hora de postar)
+        r = db.exec("SELECT * FROM videos WHERE (editado_msg=? AND status IN ('aguardando','agendado')) "
+                    "OR (hora_msg=? AND status='na_hora')", (resposta, resposta))
         if r:
             fila.put(("headline", r[0]["id"], txt))
             tg_seguro("setMessageReaction", chat_id=chat_id, message_id=msg["message_id"],
@@ -666,7 +698,7 @@ def tratar_botao(cb):
         if pendentes:
             resumo += f"\n\n⏳ Ainda tem {pendentes} sendo editado(s) — aprove quando chegarem."
         texto(v["chat_id"], resumo, "editados")
-    elif acao == "ou" and v["status"] == "aguardando":
+    elif acao == "ou" and v["status"] in ("aguardando", "agendado", "na_hora"):
         fila.put(("headline", v["id"], None))
         aviso = "Gerando outra headline..."
     elif acao == "de" and v["status"] in ("aguardando", "agendado"):
