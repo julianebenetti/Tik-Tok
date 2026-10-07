@@ -67,7 +67,8 @@ Continue alimentando ela ao longo do ano:
 | `glossario.json` | headlines, hashtags e chamadas (sincronizado da página do Método UGC) |
 | `glossario.py` | regras: reconhece o produto, concorda gênero, escolhe headline/hashtags/chamada |
 | `cortar_parados.py` | corta as paradas (também funciona sozinho: `python3 cortar_parados.py pasta/`) |
-| `texto_tela.py` | escreve a headline no vídeo |
+| `texto_tela.py` | escreve a headline no vídeo no estilo "Clássico" do TikTok (letra branca com contorno preto, 61% da altura, emoji colorido) |
+| `fontes/` | TikTok Sans (fonte oficial do TikTok, licença OFL) |
 | `instalar.sh` | instala/atualiza no VPS |
 
 ## Manutenção (Terminal do VPS)

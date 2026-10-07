@@ -12,12 +12,12 @@ ENV=/etc/central-tiktok.env
 
 echo "→ Instalando python3, ffmpeg e fontes..."
 apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 ffmpeg curl ca-certificates tzdata fontconfig fonts-dejavu-core >/dev/null
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq fonts-montserrat >/dev/null 2>&1 || true
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 ffmpeg curl ca-certificates tzdata fontconfig fonts-dejavu-core python3-pil fonts-noto-color-emoji >/dev/null
 
 echo "→ Baixando a Central..."
 mkdir -p "$DIR"
-for f in central.py cortar_parados.py glossario.py glossario.json texto_tela.py; do
+mkdir -p "$DIR/fontes"
+for f in central.py cortar_parados.py glossario.py glossario.json texto_tela.py fontes/TikTokSans.ttf fontes/OFL.txt; do
   curl -fsSL "$BASE/$f" -o "$DIR/$f"
 done
 id centraltiktok >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin centraltiktok
