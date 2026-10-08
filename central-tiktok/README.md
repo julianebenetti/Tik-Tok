@@ -9,7 +9,10 @@ Roda 24h no VPS da Hostinger.
 
 1. Você encaminha os vídeos crus pra **📥 Brutos**, cada um com o nome do arquivo logo abaixo
    (`CONJUNTO_BIQUINI_FEMININO_COM_SAIDA_G1C2A1_0510_….mp4`) — ou a legenda `nome do produto | preço`.
-   Se não vier nome em 30 segundos, o robô pergunta.
+   Encaminhando só os vídeos (pela aba Mídias, sem as mensagens de nome)? Mande **antes** o nome do
+   produto (ex.: `Calça pantalona | 79,90`) e depois os vídeos: todos ficam com esse nome (o robô reage ✍).
+   Se vierem vídeos sem nome, depois de 30 segundos o robô faz **uma pergunta só** pra todos eles;
+   responda uma vez e vale pra todos. O que chega em Brutos fica no log (`journalctl -u central-tiktok`).
 2. O robô corta as paradas, escreve a **headline na tela** (estilo dos seus posts) e manda pra
    **✂️ Editados**. Você confere os cortes e a headline: **✅ Aprovar**, **🔄 Outra headline**
    (ou responda o vídeo com a sua), **❌ Descartar**, ou **✅✅ Aprovar todos deste produto**.

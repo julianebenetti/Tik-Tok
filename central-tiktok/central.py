@@ -64,6 +64,9 @@ fila = queue.Queue()
 legendas_album = {}                   # media_group_id -> legenda do álbum
 nomes_soltos = {}                     # chat_id -> [(msg_id, produto, sequencia, hora)] esperando o vídeo
 VIZINHANCA = 3                        # nome e vídeo são "vizinhos" se estão a até 3 mensagens de distância
+nome_ativo = {}                       # chat_id -> (produto, preço, msg_id, hora): nome mandado ANTES de uma
+                                      # leva de vídeos sem nome (ex.: encaminhados pela aba Mídias)
+VALIDADE_NOME_ATIVO = 30 * 60
 
 
 # =================================================================== banco
@@ -635,16 +638,28 @@ def agendador():
                 ultimo_glossario = time.time()
                 atualizar_glossario()
             # 1) vídeos sem produto: pega a legenda do álbum ou pergunta
+            sem_nome = {}
             for v in db.exec("SELECT * FROM videos WHERE status='sem_produto' AND pergunta_msg IS NULL "
-                             "AND criado < ?", (time.time() - ESPERA_NOME,)):
+                             "AND criado < ? ORDER BY bruto_msg", (time.time() - ESPERA_NOME,)):
                 leg = legendas_album.get(v["album"]) if v["album"] else None
+                ativo = nome_ativo.get(v["chat_id"])
                 if leg:
                     definir_produto(v["id"], *nome_do_texto(leg))
+                elif ativo and ativo[2] < v["bruto_msg"] and time.time() - ativo[3] < VALIDADE_NOME_ATIVO:
+                    definir_produto(v["id"], ativo[0], ativo[1], None)  # nome mandado antes da leva
                 else:
-                    m = texto(v["chat_id"], "🛍 Qual o produto deste vídeo? <b>Responda esta mensagem</b> com:\n"
-                                            "<code>nome do produto no TikTok | preço</code>\n"
-                                            "(ou cole o nome do arquivo, ex.: VESTIDO_LONGO_G1C2A1.mp4)",
-                              "brutos", v["bruto_msg"])
+                    sem_nome.setdefault(v["chat_id"], []).append(v)
+            for chat, vs in sem_nome.items():   # UMA pergunta pra todos os vídeos sem nome
+                n = len(vs)
+                m = texto(chat, (f"🛍 <b>{n} vídeo{'s' if n > 1 else ''} sem o nome do produto.</b>\n"
+                                 f"<b>Responda esta mensagem</b> com o nome — vale pra "
+                                 f"{'todos eles' if n > 1 else 'ele'}:\n"
+                                 "<code>nome do produto no TikTok | preço</code> "
+                                 "(ou o nome do arquivo, ex.: VESTIDO_LONGO_G1C2A1.mp4)\n\n"
+                                 "💡 <i>Dica: se for encaminhar vários vídeos do mesmo produto sem a mensagem de "
+                                 "nome (pela aba Mídias), mande o nome antes e depois os vídeos.</i>"),
+                          "brutos", vs[0]["bruto_msg"])
+                for v in vs:
                     db.atualizar(v["id"], pergunta_msg=m["message_id"] if m else 0)
             # 2) virada do dia: o próximo dia entra na agenda
             if db.get("agenda_dia") != agora().date().isoformat():
@@ -752,7 +767,7 @@ def receber_video(msg, video):
         nome, preco, seq = nome_do_texto(leg or legendas_album.get(album))
     if not nome:                                   # nome do arquivo anexado ao próprio vídeo
         arq = glossario.ler_nome_arquivo((msg.get("video") or msg.get("document") or {}).get("file_name"))
-        if arq and arq[1]:
+        if arq:
             nome, seq = arq
     if not nome:   # o nome (mensagem logo depois do vídeo) chegou antes do vídeo ser processado
         soltos = nomes_soltos.get(chat, [])
@@ -837,36 +852,52 @@ def tratar_mensagem(msg):
     resposta = (msg.get("reply_to_message") or {}).get("message_id")
 
     if thread == topico("brutos"):
+        midia = msg.get("video") or msg.get("document") or {}
+        print(f"brutos #{msg['message_id']}: {'VÍDEO' if video else 'texto'} "
+              f"arquivo={midia.get('file_name')!r} legenda={(msg.get('caption') or '')[:60]!r} "
+              f"texto={txt[:70]!r} album={msg.get('media_group_id')} resposta_a={resposta} "
+              f"encaminhado={'forward_origin' in msg}")
         if video:
             receber_video(msg, video)
         elif txt and resposta:
-            # resposta à pergunta "qual o produto?" (ou direto ao vídeo)
+            # resposta à pergunta "qual o produto?" (vale pra todos dela) ou direto a um vídeo
             r = db.exec("SELECT * FROM videos WHERE status='sem_produto' AND (pergunta_msg=? OR bruto_msg=?)",
                         (resposta, resposta))
+            for x in r:
+                definir_produto(x["id"], *nome_do_texto(txt), nome_msg=msg["message_id"])
             if r:
-                definir_produto(r[0]["id"], *nome_do_texto(txt), nome_msg=msg["message_id"])
                 tg_seguro("setMessageReaction", chat_id=chat_id, message_id=msg["message_id"],
                           reaction=[{"type": "emoji", "emoji": "👌"}])
-        elif txt and glossario.ler_nome_arquivo(txt):
-            # nome do arquivo logo abaixo do vídeo → vale pro último vídeo sem produto acima dele
-            nome, seq = glossario.ler_nome_arquivo(txt)
+        elif txt:
+            # nome do arquivo logo abaixo do vídeo (ou "nome | preço") → vale pro vídeo sem produto acima dele
+            nome, preco, seq = nome_do_texto(txt)
+            if not nome:
+                return
             mid = msg["message_id"]
             # 1º: o vídeo logo acima (mesma leva encaminhada)
             r = db.exec("SELECT id FROM videos WHERE chat_id=? AND status='sem_produto' AND bruto_msg < ? "
                         "AND bruto_msg >= ? ORDER BY bruto_msg DESC LIMIT 1", (chat_id, mid, mid - VIZINHANCA))
-            # 2º: digitado depois, à mão — vale pro vídeo recente sobre o qual o robô já perguntou
+            # 2º: digitado depois de o robô perguntar — vale pra todos os vídeos daquela pergunta
             if not r:
-                r = db.exec("SELECT id FROM videos WHERE chat_id=? AND status='sem_produto' AND bruto_msg < ? "
-                            "AND pergunta_msg IS NOT NULL AND criado > ? ORDER BY bruto_msg DESC LIMIT 1",
-                            (chat_id, mid, time.time() - 3600))
+                ult = db.exec("SELECT pergunta_msg FROM videos WHERE chat_id=? AND status='sem_produto' "
+                              "AND bruto_msg < ? AND pergunta_msg > 0 AND criado > ? "
+                              "ORDER BY bruto_msg DESC LIMIT 1", (chat_id, mid, time.time() - 3600))
+                if ult:
+                    r = db.exec("SELECT id FROM videos WHERE status='sem_produto' AND pergunta_msg=?",
+                                (ult[0]["pergunta_msg"],))
+            for x in r:
+                definir_produto(x["id"], nome, preco, seq if len(r) == 1 else None, nome_msg=mid)
             if r:
-                definir_produto(r[0]["id"], nome, None, seq, nome_msg=mid)
                 tg_seguro("setMessageReaction", chat_id=chat_id, message_id=mid,
                           reaction=[{"type": "emoji", "emoji": "👌"}])
-            else:   # o vídeo ainda não foi processado: guarda o nome pra quando ele chegar
+            else:
+                # o vídeo de cima ainda não foi processado (corrida) ou é um nome mandado ANTES de uma leva
                 soltos = [x for x in nomes_soltos.get(chat_id, []) if time.time() - x[3] < 600]
                 soltos.append((mid, nome, seq, time.time()))
                 nomes_soltos[chat_id] = soltos
+                nome_ativo[chat_id] = (nome, preco, mid, time.time())
+                tg_seguro("setMessageReaction", chat_id=chat_id, message_id=mid,
+                          reaction=[{"type": "emoji", "emoji": "✍"}])
     elif thread in (topico("editados"), topico("hora")) and txt and resposta:
         # resposta com texto ao vídeo (ou ao aviso dele) = headline nova
         r = db.exec("SELECT * FROM videos WHERE (editado_msg=? AND status='aguardando') OR "
