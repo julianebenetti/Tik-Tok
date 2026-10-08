@@ -23,7 +23,9 @@ Roda 24h no VPS da Hostinger.
    (11 vídeos → um a cada 2 dias; 5 vídeos → um a cada 6 dias; no máximo 7 dias de intervalo).
    O botão **✅✅ Aprovar todos deste produto** agenda todos de uma vez, já espaçados.
    As headlines não se repetem entre os vídeos do mesmo produto.
-4. No horário, o vídeo chega em **⏰ Hora de postar** com a legenda pra copiar.
+4. No horário, o vídeo chega em **⏰ Hora de postar** com a legenda pra copiar (botões 📋 Copiar legenda / Copiar chamada).
+   No topo desse tópico fica fixada a **📅 Fila de postagem**, com a sequência dos próximos vídeos e botões
+   **🚀** pra adiantar um vídeo e postar agora (também no vídeo agendado em ✂️ Editados).
    Você posta no TikTok, escolhe o produto do TikTok Shop e toca em **Postei**.
 
 > Fase 3 (depois que o app do TikTok for aprovado): no horário, o vídeo também
