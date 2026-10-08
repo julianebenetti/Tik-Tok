@@ -9,6 +9,8 @@ Roda 24h no VPS da Hostinger.
 
 1. Você encaminha os vídeos crus pra **📥 Brutos**, cada um com o nome do arquivo logo abaixo
    (`CONJUNTO_BIQUINI_FEMININO_COM_SAIDA_G1C2A1_0510_….mp4`) — ou a legenda `nome do produto | preço`.
+   Vários vídeos seguidos e **um nome só embaixo** de todos? O nome vale pra todos os vídeos acima dele
+   (até o nome anterior).
    Encaminhando só os vídeos (pela aba Mídias, sem as mensagens de nome)? Mande **antes** o nome do
    produto (ex.: `Calça pantalona | 79,90`) e depois os vídeos: todos ficam com esse nome (o robô reage ✍).
    Se vierem vídeos sem nome, depois de 30 segundos o robô faz **uma pergunta só** pra todos eles;

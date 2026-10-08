@@ -199,6 +199,8 @@ nem pra print.
 - Os vídeos vêm do gerador "IA - Multiplicador Vídeo": vários vídeos do mesmo produto, cada um
   seguido de uma mensagem com o nome do arquivo `PRODUTO_EM_MAIUSCULAS_G#C#A#_DDMM_timestamp.mp4`
   (G/C/A = gancho/corpo/CTA da biblioteca de movimentos). O robô junta nome+vídeo sozinho.
+  Também aceita: leva de vídeos + 1 nome embaixo (vale pra todos acima até o texto anterior), nome mandado
+  antes da leva (vale 30 min) e resposta única à pergunta agrupada. Log de Brutos no journalctl.
 - **Mesmo produto nunca 2 vídeos no mesmo dia**; espalhados pelo mês: intervalo =
   max(1, min(7, 30 // nº de vídeos do produto)) dias. Headlines não repetem dentro do produto.
 - Postagem: vai pros rascunhos do TikTok (fase 3, depende do app no TikTok for Developers);

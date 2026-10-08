@@ -67,6 +67,7 @@ VIZINHANCA = 3                        # nome e vídeo são "vizinhos" se estão 
 nome_ativo = {}                       # chat_id -> (produto, preço, msg_id, hora): nome mandado ANTES de uma
                                       # leva de vídeos sem nome (ex.: encaminhados pela aba Mídias)
 VALIDADE_NOME_ATIVO = 30 * 60
+textos_brutos = {}                    # chat_id -> ids das últimas mensagens de texto em Brutos (separam levas)
 
 
 # =================================================================== banco
@@ -869,14 +870,30 @@ def tratar_mensagem(msg):
                 tg_seguro("setMessageReaction", chat_id=chat_id, message_id=msg["message_id"],
                           reaction=[{"type": "emoji", "emoji": "👌"}])
         elif txt:
-            # nome do arquivo logo abaixo do vídeo (ou "nome | preço") → vale pro vídeo sem produto acima dele
+            # nome do arquivo logo abaixo do vídeo (ou "nome | preço") → vale pro(s) vídeo(s) sem produto acima
             nome, preco, seq = nome_do_texto(txt)
             if not nome:
                 return
+            textos_brutos[chat_id] = (textos_brutos.get(chat_id, []) + [msg["message_id"]])[-50:]
             mid = msg["message_id"]
-            # 1º: o vídeo logo acima (mesma leva encaminhada)
-            r = db.exec("SELECT id FROM videos WHERE chat_id=? AND status='sem_produto' AND bruto_msg < ? "
-                        "AND bruto_msg >= ? ORDER BY bruto_msg DESC LIMIT 1", (chat_id, mid, mid - VIZINHANCA))
+            # 1º: os vídeos sem nome logo acima — um (par vídeo+nome) ou vários seguidos (leva + 1 nome
+            #     embaixo). Para no texto anterior (o nome da leva/par de cima).
+            anteriores = [t for t in textos_brutos.get(chat_id, []) if t < mid]
+            limite = max(anteriores) if anteriores else 0
+            r, proximo = [], mid
+            for x in db.exec("SELECT id, bruto_msg, status FROM videos WHERE chat_id=? AND bruto_msg < ? "
+                             "AND bruto_msg > ? AND criado > ? ORDER BY bruto_msg DESC",
+                             (chat_id, mid, limite, time.time() - 3600)):
+                if proximo - x["bruto_msg"] > VIZINHANCA or x["status"] != "sem_produto":
+                    break
+                r.append(x)
+                proximo = x["bruto_msg"]
+            ativo = nome_ativo.get(chat_id)
+            if r and ativo and ativo[2] == limite:
+                # a leva acima veio DEPOIS de um nome mandado antes dela: é desse nome, não deste
+                for x in r:
+                    definir_produto(x["id"], ativo[0], ativo[1], None)
+                r = []
             # 2º: digitado depois de o robô perguntar — vale pra todos os vídeos daquela pergunta
             if not r:
                 ult = db.exec("SELECT pergunta_msg FROM videos WHERE chat_id=? AND status='sem_produto' "
