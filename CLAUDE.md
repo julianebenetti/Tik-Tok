@@ -203,8 +203,12 @@ nem pra print.
   antes da leva (vale 30 min) e resposta única à pergunta agrupada. Log de Brutos no journalctl.
 - **Mesmo produto nunca 2 vídeos no mesmo dia**; espalhados pelo mês: intervalo =
   max(1, min(7, 30 // nº de vídeos do produto)) dias. Headlines não repetem dentro do produto.
-- Postagem: vai pros rascunhos do TikTok (fase 3, depende do app no TikTok for Developers);
-  a Juliane valida e escolhe o produto do TikTok Shop. Nunca publicar sem aprovação dela.
+- Postagem: no horário o vídeo vai pro **rascunho (inbox)** do TikTok dela via Content Posting API
+  (`tiktok_api.py`, escopos user.info.basic + video.upload — **nunca** video.publish/Direct Post);
+  ela valida, escolhe o produto do TikTok Shop e publica no app. Nunca publicar sem aprovação dela.
+  Chaves do app em /etc/central-tiktok.env (TIKTOK_CLIENT_KEY/SECRET/REDIRECT_URI); tokens em
+  /var/lib/central-tiktok/tiktok.json (600). Páginas exigidas pelo TikTok em `site/` → <domínio>/central-tiktok/.
+  Limite do TikTok: 5 rascunhos pendentes por 24h; 6 chamadas/min no init.
 - **Fonte do glossário = página "Prompts do Método UGC"** (claude.ai/artifact/RcWX2zmyEdn4P4voEwX1MV),
   que ela alimenta ao longo do ano. A rotina `Central TikTok — Sincronizar glossário` (5h52)
   converte a página em `central-tiktok/glossario.json` e faz push no ramo

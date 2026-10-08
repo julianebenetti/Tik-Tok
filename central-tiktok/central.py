@@ -40,6 +40,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cortar_parados  # noqa: E402
 import glossario  # noqa: E402
 import texto_tela  # noqa: E402
+import tiktok_api  # noqa: E402
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 PERMITIDOS = {int(x) for x in os.environ.get("USUARIOS_PERMITIDOS", "").replace(" ", "").split(",") if x}
@@ -85,7 +86,8 @@ class Banco:
             base TEXT, final TEXT, editado_msg INTEGER, slot TEXT, hora_msg INTEGER,
             criado REAL, atualizado REAL)""")
         for col in ("chave TEXT", "sequencia TEXT", "nome_msg INTEGER",   # colunas novas
-                    "tg_video TEXT", "aviso_msg INTEGER"):
+                    "tg_video TEXT", "aviso_msg INTEGER", "tiktok_id TEXT", "tiktok_status TEXT",
+                    "tiktok_msg INTEGER"):
             try:
                 self.exec(f"ALTER TABLE videos ADD COLUMN {col}")
             except sqlite3.OperationalError:
@@ -115,6 +117,7 @@ class Banco:
 
 
 db = None
+conta_tiktok = None
 
 
 # =================================================================== Telegram
@@ -281,7 +284,9 @@ def legenda_hora(v):
     return (f"{topo}\n"
             f"🛍 <b>{e(v['produto'])}</b>\n"
             f"📝 <b>Na tela:</b> {e(v['headline'])}\n\n"
-            f"1️⃣ Salve o vídeo e poste no TikTok\n"
+            + (f"1️⃣ Abra o <b>rascunho no app do TikTok</b> (notificação na caixa de entrada)\n"
+               if v["tiktok_status"] in ("enviado", "no_rascunho") else
+               f"1️⃣ Salve o vídeo e poste no TikTok\n") +
             f"2️⃣ Legenda — botão <b>📋 Copiar legenda</b>:\n<code>{e(v['hashtags'])}</code>\n"
             f"3️⃣ Produto no TikTok Shop: <b>{e(v['produto'])}</b>\n"
             f"4️⃣ Chamada do link — botão <b>📋 Copiar chamada</b>:\n<code>{e(v['chamada'])}</code>\n\n"
@@ -294,6 +299,10 @@ def botoes_hora(vid):
     v = db.video(vid)
     teclado = botoes([("✅ Postei", f"po:{vid}"), ("🔄 Outra headline", f"ou:{vid}")],
                      [("🔁 Reagendar", f"re:{vid}"), ("❌ Descartar", f"de:{vid}")])
+    if conta_tiktok and conta_tiktok.conectada():
+        rotulo = ("📲 Mandar de novo pro TikTok" if v["tiktok_status"] in ("enviado", "no_rascunho")
+                  else "📲 Mandar pro rascunho do TikTok agora")
+        teclado["inline_keyboard"].insert(0, [{"text": rotulo, "callback_data": f"tk:{vid}"}])
     # botões que copiam o texto com um toque (limite do Telegram: 256 caracteres)
     copiar = [{"text": rotulo, "copy_text": {"text": txt[:256]}}
               for rotulo, txt in (("📋 Copiar legenda", v["hashtags"]), ("📋 Copiar chamada", v["chamada"])) if txt]
@@ -444,6 +453,8 @@ def trabalhador():
                 processar(vid)
             elif tarefa == "headline":
                 refazer_headline(vid, extra)
+            elif tarefa == "tiktok":
+                mandar_pro_tiktok(vid)
         except Exception as ex:
             traceback.print_exc()
             v = db.video(vid)
@@ -605,6 +616,48 @@ def atualizar_fila():
             tg_seguro("pinChatMessage", chat_id=chat, message_id=m["message_id"], disable_notification=True)
 
 
+def mandar_pro_tiktok(vid):
+    """Manda o vídeo final pra caixa de entrada (rascunho) do TikTok e avisa no Telegram."""
+    v = db.video(vid)
+    if not v or v["status"] not in ("agendado", "na_hora"):
+        return
+    try:
+        publish_id = conta_tiktok.enviar_rascunho(v["final"])
+    except Exception as ex:
+        db.atualizar(vid, tiktok_status="erro")
+        texto(v["chat_id"], f"⚠️ Não consegui mandar pro TikTok: {e(tiktok_api.erro_amigavel(ex))}\n"
+                            "Dá pra postar salvando o vídeo daqui mesmo.", "hora", v["hora_msg"])
+        return
+    db.atualizar(vid, tiktok_id=publish_id, tiktok_status="enviado")
+    v = db.video(vid)
+    if v["hora_msg"]:
+        tg_seguro("editMessageCaption", chat_id=v["chat_id"], message_id=v["hora_msg"],
+                  caption=legenda_hora(v), parse_mode="HTML", reply_markup=botoes_hora(vid))
+    m = texto(v["chat_id"], f"📲 <b>Mandei pro rascunho do seu TikTok!</b> {e(v['produto'])}\n"
+                            "Abra o app → notificação na caixa de entrada → confira, escolha o produto do "
+                            "TikTok Shop, cole a legenda e publique. Depois toque em ✅ Postei.",
+              "hora", v["hora_msg"])
+    if m:
+        db.atualizar(vid, tiktok_msg=m["message_id"])
+
+
+def acompanhar_tiktok():
+    """Confere se os rascunhos enviados chegaram (ou falharam) no TikTok."""
+    for v in db.exec("SELECT * FROM videos WHERE tiktok_status='enviado' AND tiktok_id IS NOT NULL "
+                     "AND status IN ('agendado','na_hora')"):
+        try:
+            st, motivo = conta_tiktok.status(v["tiktok_id"])
+        except Exception as ex:
+            print("status tiktok:", ex)
+            continue
+        if st in ("SEND_TO_USER_INBOX", "PUBLISH_COMPLETE"):
+            db.atualizar(v["id"], tiktok_status="no_rascunho")
+        elif st == "FAILED":
+            db.atualizar(v["id"], tiktok_status="erro")
+            texto(v["chat_id"], f"⚠️ O TikTok recusou o rascunho de {e(v['produto'])}: {e(motivo)}. "
+                                "Toque em 📲 pra tentar de novo ou poste salvando o vídeo.", "hora", v["hora_msg"])
+
+
 def chegou_a_hora(v):
     """No horário: marca o vídeo e avisa (notificação) respondendo a ele na agenda."""
     if not v["hora_msg"]:
@@ -618,6 +671,8 @@ def chegou_a_hora(v):
     aviso = texto(v["chat_id"], f"⏰ <b>Hora de postar!</b> {e(v['produto'])} 👆", "hora", v["hora_msg"])
     if aviso:
         db.atualizar(v["id"], aviso_msg=aviso["message_id"])
+    if conta_tiktok and conta_tiktok.conectada() and v["tiktok_status"] not in ("enviado", "no_rascunho"):
+        fila.put(("tiktok", v["id"], None))
 
 
 def atualizar_glossario():
@@ -673,7 +728,10 @@ def agendador():
                     chegou_a_hora(v)
                 except Exception:
                     traceback.print_exc()
-            # 4) limpeza dos arquivos antigos
+            # 4) rascunhos enviados: chegaram no TikTok?
+            if conta_tiktok and conta_tiktok.conectada():
+                acompanhar_tiktok()
+            # 5) limpeza dos arquivos antigos
             if time.time() - ultima_limpeza > 3600:
                 ultima_limpeza = time.time()
                 # vídeo que ficou sem produto por mais de 1 dia (apagado/esquecido) sai da fila
@@ -697,7 +755,8 @@ AJUDA = (
     "<b>3.</b> Aprovados entram na agenda (6 por dia, 17h–22h; o mesmo produto nunca no mesmo dia). "
     "Em <b>⏰ Hora de postar</b> ficam os vídeos de hoje e dos próximos dias, em ordem. "
     "No horário eu aviso. Postou? Toque em <b>✅ Postei</b>. Pode postar antes também.\n\n"
-    "Comandos: /agenda · /glossario (recarrega headlines e hashtags) · /limiar 1.5 (corta mais) · "
+    "Comandos: /agenda · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
+    "/limiar 1.5 (corta mais) · "
     "/limiar 0.7 (corta menos) · /configurar"
 )
 
@@ -828,6 +887,41 @@ def tratar_mensagem(msg):
         texto(chat_id, f"📅 <b>Agenda</b>\n{corpo}\n\n⏳ Esperando sua aprovação em ✂️ Editados: {aguardando}",
               responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"))
         return
+    if cmd == "/tiktok":
+        if not tiktok_api.configurado():
+            texto(chat_id, "🔌 O app do TikTok ainda não está configurado no servidor.\n"
+                           "Depois de criar o app no TikTok for Developers, rode o instalador de novo no VPS — "
+                           "ele vai pedir a <b>Client key</b> e o <b>Client secret</b>.",
+                  responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"))
+        else:
+            atual = (f"✅ Conectado: <b>{e(conta_tiktok.nome() or 'sua conta')}</b>\n\n"
+                     if conta_tiktok.conectada() else "")
+            texto(chat_id, f"{atual}🔗 <b>Conectar o TikTok</b>\n"
+                           f"1. Abra: <a href=\"{e(conta_tiktok.link_autorizacao())}\">autorizar a Central no TikTok</a>\n"
+                           "2. Entre na sua conta e toque em <b>Autorizar</b>\n"
+                           "3. A página vai mostrar uma mensagem <code>/tiktok_codigo …</code> — copie e mande aqui.\n\n"
+                           "Pra desconectar: /tiktok_sair",
+                  responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"),
+                  link_preview_options={"is_disabled": True})
+        return
+    if cmd == "/tiktok_codigo":
+        partes = txt.split(maxsplit=1)
+        tg_seguro("deleteMessage", chat_id=chat_id, message_id=msg["message_id"])   # o código é sensível
+        try:
+            nome = conta_tiktok.trocar_codigo(partes[1] if len(partes) > 1 else "")
+            resp = (f"✅ <b>TikTok conectado</b>{': ' + e(nome) if nome else ''}!\n"
+                    "A partir de agora, no horário de cada vídeo eu mando ele pro rascunho do seu TikTok.")
+            sincronizar_agenda(forcar=True)   # os vídeos da agenda ganham o botão 📲
+        except Exception as ex:
+            resp = f"⚠️ Não consegui conectar: {e(tiktok_api.erro_amigavel(ex))}\nMande /tiktok e tente de novo."
+        texto(chat_id, resp, message_thread_id=msg.get("message_thread_id"))
+        return
+    if cmd == "/tiktok_sair":
+        conta_tiktok.desconectar()
+        texto(chat_id, "🔌 TikTok desconectado. Pra revogar de vez: app do TikTok → Configurações e privacidade "
+                       "→ Segurança → Apps e serviços.", message_thread_id=msg.get("message_thread_id"))
+        sincronizar_agenda(forcar=True)
+        return
     if cmd == "/glossario":
         fonte, n = atualizar_glossario()
         origem = {"github": "versão mais nova do GitHub", "cache": "última versão salva (GitHub fora do ar)",
@@ -957,14 +1051,20 @@ def tratar_botao(cb):
             tg_seguro("copyMessage", chat_id=v["chat_id"], from_chat_id=v["chat_id"],
                       message_id=v["hora_msg"], message_thread_id=topico("postados"), parse_mode="HTML",
                       caption=f"🚀 Postado {slot_bonito(quando)}\n🛍 {e(v['produto'])}\n📝 {e(v['headline'])}")
-        apagar_msgs(v["chat_id"], v["hora_msg"], v["aviso_msg"])
-        db.atualizar(v["id"], hora_msg=None, aviso_msg=None)
+        apagar_msgs(v["chat_id"], v["hora_msg"], v["aviso_msg"], v["tiktok_msg"])
+        db.atualizar(v["id"], hora_msg=None, aviso_msg=None, tiktok_msg=None)
         aviso = "Boa! 🚀"
     elif acao == "re" and v["status"] in ("agendado", "na_hora"):
         db.atualizar(v["id"], status="aguardando", slot=None)   # libera o horário atual
         slot = proximo_slot(v["id"])
         db.atualizar(v["id"], status="agendado", slot=slot)
         aviso = f"Reagendado: {slot_bonito(slot)}"
+    elif acao == "tk" and v["status"] in ("agendado", "na_hora"):
+        if conta_tiktok and conta_tiktok.conectada():
+            fila.put(("tiktok", v["id"], None))
+            aviso = "Mandando pro rascunho do TikTok… 📲"
+        else:
+            aviso = "TikTok não conectado — mande /tiktok"
     elif acao == "pa" and v["status"] == "agendado":
         # adianta: entra na agenda de hoje, agora
         db.atualizar(v["id"], slot=agora().strftime("%Y-%m-%d %H:%M"))
@@ -986,6 +1086,8 @@ def main():
             sys.exit(f"{prog} não encontrado.")
     DADOS.mkdir(parents=True, exist_ok=True)
     db = Banco(DADOS / "central.db")
+    global conta_tiktok
+    conta_tiktok = tiktok_api.Conta(DADOS / "tiktok.json")
     atualizar_glossario()
     eu = tg("getMe")
     print(f"Central TikTok: @{eu['username']} · permitidos {sorted(PERMITIDOS) or 'ninguém'}")

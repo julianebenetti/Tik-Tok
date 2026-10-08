@@ -1,0 +1,28 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Central TikTok — Conectar</title><link rel="stylesheet" href="estilo.css"></head><body><main>
+<h1>Central TikTok</h1><p class="sub">Conectar a conta do TikTok</p>
+<div class="card" id="ok" hidden>
+  <p>✅ <b>Autorizado!</b> Agora copie a mensagem abaixo e mande no grupo da Central, no Telegram:</p>
+  <code id="cmd"></code>
+  <button id="copiar">📋 Copiar</button>
+  <p class="en">O código vale por poucos minutos. Se expirar, mande <b>/tiktok</b> no grupo de novo.</p>
+</div>
+<div class="card" id="erro" hidden><p>⚠️ <b>Não deu certo:</b> <span id="msg"></span></p>
+  <p>Mande <b>/tiktok</b> no grupo e tente de novo.</p></div>
+<div class="card" id="nada" hidden><p>Esta página recebe a autorização do TikTok. Para conectar, mande <b>/tiktok</b> no grupo da
+Central no Telegram e toque no link.</p></div>
+<script>
+  var p = new URLSearchParams(location.search), code = p.get("code");
+  if (code) {
+    var cmd = "/tiktok_codigo " + code;
+    document.getElementById("cmd").textContent = cmd;
+    document.getElementById("ok").hidden = false;
+    document.getElementById("copiar").onclick = function () {
+      navigator.clipboard.writeText(cmd).then(function () { document.getElementById("copiar").textContent = "✅ Copiado"; });
+    };
+  } else if (p.get("error")) {
+    document.getElementById("msg").textContent = p.get("error_description") || p.get("error");
+    document.getElementById("erro").hidden = false;
+  } else { document.getElementById("nada").hidden = false; }
+</script>
+</main></body></html>

@@ -27,8 +27,18 @@ Roda 24h no VPS da Hostinger.
    **🔁 Reagendar** e **❌ Descartar**. No horário o robô avisa ("⏰ Hora de postar!") respondendo o vídeo.
    Pode postar antes: é só tocar em ✅ Postei.
 
-> Fase 3 (depois que o app do TikTok for aprovado): no horário, o vídeo também
-> vai direto pros **rascunhos do TikTok**.
+5. **TikTok conectado** (`/tiktok`): no horário, o vídeo vai sozinho pro **rascunho do seu TikTok**
+   (caixa de entrada do app). Você abre a notificação, escolhe o produto do TikTok Shop, cola a legenda e
+   publica. Nada é publicado sem você. Botão **📲** manda na hora. Limite do TikTok: 5 rascunhos pendentes/24h.
+
+## Conectar o TikTok (uma vez)
+1. As páginas `site/` (privacidade, termos, conectar) precisam estar no seu domínio:
+   `SITE_DIR=/caminho/da/pasta/do/site curl -fsSL …/instalar.sh | bash` copia pra `<site>/central-tiktok/`.
+2. Em developers.tiktok.com: crie o app, adicione **Login Kit** (redirect URI = `https://SEU_DOMINIO/central-tiktok/conectar.html`)
+   e **Content Posting API** (Upload), escopos `user.info.basic` e `video.upload`; Terms/Privacy apontando pras páginas.
+3. Rode o instalador de novo e cole Client key, Client secret e o endereço do conectar.html.
+4. No grupo: `/tiktok` → autorizar → copiar a mensagem `/tiktok_codigo …` e mandar no grupo.
+   (Enquanto o app não é aprovado, só funciona com contas adicionadas como teste no Sandbox.)
 
 ## Instalação (uma vez só)
 1. **Criar o robô:** no Telegram, **@BotFather** → `/newbot`. Guarde o **token**.
@@ -70,6 +80,8 @@ Continue alimentando ela ao longo do ano:
 | `cortar_parados.py` | corta as paradas (também funciona sozinho: `python3 cortar_parados.py pasta/`) |
 | `texto_tela.py` | escreve a headline no vídeo no estilo "Clássico" do TikTok (letra branca com contorno preto, 61% da altura, emoji colorido) |
 | `fontes/` | TikTok Sans (fonte oficial do TikTok, licença OFL) |
+| `tiktok_api.py` | conexão com o TikTok (autorização e envio pro rascunho) |
+| `site/` | páginas de privacidade, termos e retorno da autorização (vão pro seu domínio) |
 | `instalar.sh` | instala/atualiza no VPS |
 
 ## Manutenção (Terminal do VPS)
