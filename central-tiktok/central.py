@@ -59,7 +59,8 @@ DIAS_SEMANA = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
 
 fila = queue.Queue()
 legendas_album = {}                   # media_group_id -> legenda do álbum
-nomes_soltos = {}                     # chat_id -> (produto, sequencia, msg_id, hora) esperando um vídeo
+nomes_soltos = {}                     # chat_id -> [(msg_id, produto, sequencia, hora)] esperando o vídeo
+VIZINHANCA = 3                        # nome e vídeo são "vizinhos" se estão a até 3 mensagens de distância
 
 
 # =================================================================== banco
@@ -475,6 +476,9 @@ def agendador():
             # 3) limpeza dos arquivos antigos
             if time.time() - ultima_limpeza > 3600:
                 ultima_limpeza = time.time()
+                # vídeo que ficou sem produto por mais de 1 dia (apagado/esquecido) sai da fila
+                db.exec("UPDATE videos SET status='erro' WHERE status='sem_produto' AND criado < ?",
+                        (time.time() - 86400,))
                 for v in db.exec("SELECT id FROM videos WHERE status IN ('postado','descartado','erro') "
                                  "AND atualizado < ?", (time.time() - DIAS_GUARDAR * 86400,)):
                     shutil.rmtree(DADOS / "videos" / str(v["id"]), ignore_errors=True)
@@ -566,10 +570,13 @@ def receber_video(msg, video):
         arq = glossario.ler_nome_arquivo((msg.get("video") or msg.get("document") or {}).get("file_name"))
         if arq and arq[1]:
             nome, seq = arq
-    solto = nomes_soltos.get(chat)
-    if not nome and solto and time.time() - solto[3] < ESPERA_NOME:   # nome chegou antes do vídeo
-        nome, seq = solto[0], solto[1]
-        del nomes_soltos[chat]
+    if not nome:   # o nome (mensagem logo depois do vídeo) chegou antes do vídeo ser processado
+        soltos = nomes_soltos.get(chat, [])
+        for item in soltos:
+            if 0 < item[0] - msg["message_id"] <= VIZINHANCA:
+                _, nome, seq, _ = item
+                soltos.remove(item)
+                break
     if nome:
         definir_produto(vid, nome, preco, seq)
     # senão espera a próxima mensagem com o nome do arquivo (ou pergunta depois de ESPERA_NOME s)
@@ -659,12 +666,23 @@ def tratar_mensagem(msg):
         elif txt and glossario.ler_nome_arquivo(txt):
             # nome do arquivo logo abaixo do vídeo → vale pro último vídeo sem produto acima dele
             nome, seq = glossario.ler_nome_arquivo(txt)
+            mid = msg["message_id"]
+            # 1º: o vídeo logo acima (mesma leva encaminhada)
             r = db.exec("SELECT id FROM videos WHERE chat_id=? AND status='sem_produto' AND bruto_msg < ? "
-                        "ORDER BY bruto_msg DESC LIMIT 1", (chat_id, msg["message_id"]))
+                        "AND bruto_msg >= ? ORDER BY bruto_msg DESC LIMIT 1", (chat_id, mid, mid - VIZINHANCA))
+            # 2º: digitado depois, à mão — vale pro vídeo recente sobre o qual o robô já perguntou
+            if not r:
+                r = db.exec("SELECT id FROM videos WHERE chat_id=? AND status='sem_produto' AND bruto_msg < ? "
+                            "AND pergunta_msg IS NOT NULL AND criado > ? ORDER BY bruto_msg DESC LIMIT 1",
+                            (chat_id, mid, time.time() - 3600))
             if r:
-                definir_produto(r[0]["id"], nome, None, seq, nome_msg=msg["message_id"])
-            else:
-                nomes_soltos[chat_id] = (nome, seq, msg["message_id"], time.time())
+                definir_produto(r[0]["id"], nome, None, seq, nome_msg=mid)
+                tg_seguro("setMessageReaction", chat_id=chat_id, message_id=mid,
+                          reaction=[{"type": "emoji", "emoji": "👌"}])
+            else:   # o vídeo ainda não foi processado: guarda o nome pra quando ele chegar
+                soltos = [x for x in nomes_soltos.get(chat_id, []) if time.time() - x[3] < 600]
+                soltos.append((mid, nome, seq, time.time()))
+                nomes_soltos[chat_id] = soltos
     elif thread in (topico("editados"), topico("hora")) and txt and resposta:
         # resposta com texto ao vídeo = headline nova (antes de aprovar, agendado ou na hora de postar)
         r = db.exec("SELECT * FROM videos WHERE (editado_msg=? AND status IN ('aguardando','agendado')) "
