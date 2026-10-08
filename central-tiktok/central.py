@@ -284,8 +284,15 @@ def botoes_agendado(vid):
 
 
 def botoes_hora(vid):
-    return botoes([("✅ Postei", f"po:{vid}"), ("🔁 Reagendar", f"re:{vid}")],
-                  [("🔄 Outra headline", f"ou:{vid}")])
+    v = db.video(vid)
+    teclado = botoes([("✅ Postei", f"po:{vid}"), ("🔁 Reagendar", f"re:{vid}")],
+                     [("🔄 Outra headline", f"ou:{vid}")])
+    # botões que copiam o texto com um toque (limite do Telegram: 256 caracteres)
+    copiar = [{"text": rotulo, "copy_text": {"text": txt[:256]}}
+              for rotulo, txt in (("📋 Copiar legenda", v["hashtags"]), ("📋 Copiar chamada", v["chamada"])) if txt]
+    if copiar:
+        teclado["inline_keyboard"].insert(0, copiar)
+    return teclado
 
 
 def agendado_txt(slot):
@@ -305,9 +312,9 @@ def legenda_hora(v):
     return (f"⏰ <b>Hora de postar!</b> ({slot_bonito(v['slot'])})\n"
             f"📝 <b>Na tela:</b> {e(v['headline'])}\n\n"
             f"1️⃣ Salve o vídeo e poste no TikTok\n"
-            f"2️⃣ Legenda (toque pra copiar):\n<code>{e(v['hashtags'])}</code>\n"
+            f"2️⃣ Legenda — use o botão <b>📋 Copiar legenda</b>:\n<code>{e(v['hashtags'])}</code>\n"
             f"3️⃣ Produto no TikTok Shop: <b>{e(v['produto'])}</b>\n"
-            f"4️⃣ Chamada do link: <code>{e(v['chamada'])}</code>\n\n"
+            f"4️⃣ Chamada do link — use o botão <b>📋 Copiar chamada</b>:\n<code>{e(v['chamada'])}</code>\n\n"
             f"Depois toque em <b>Postei</b> 👇\n"
             f"💬 <i>Quer outra headline? Responda este vídeo com o texto ou toque em Outra headline.</i>")
 
