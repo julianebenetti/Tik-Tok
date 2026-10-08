@@ -207,7 +207,9 @@ nem pra print.
   (`tiktok_api.py`, escopos user.info.basic + video.upload — **nunca** video.publish/Direct Post);
   ela valida, escolhe o produto do TikTok Shop e publica no app. Nunca publicar sem aprovação dela.
   Chaves do app em /etc/central-tiktok.env (TIKTOK_CLIENT_KEY/SECRET/REDIRECT_URI); tokens em
-  /var/lib/central-tiktok/tiktok.json (600). Páginas exigidas pelo TikTok em `site/` → <domínio>/central-tiktok/.
+  /var/lib/central-tiktok/tiktok.json (600). Páginas exigidas pelo TikTok em `site/` → https://financeiro.descontoirresistivel.com.br/central-tiktok/
+  (/var/www/central-tiktok, location no nginx do descontoirresistivel.conf; o certificado desse servidor só cobre
+  o `financeiro.` — raiz e www não têm HTTPS). Redirect URI = …/central-tiktok/conectar.html.
   Limite do TikTok: 5 rascunhos pendentes por 24h; 6 chamadas/min no init.
 - **Fonte do glossário = página "Prompts do Método UGC"** (claude.ai/artifact/RcWX2zmyEdn4P4voEwX1MV),
   que ela alimenta ao longo do ano. A rotina `Central TikTok — Sincronizar glossário` (5h52)

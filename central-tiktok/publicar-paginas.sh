@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Publica as páginas que o TikTok exige (privacidade, termos, conectar) em
-#   https://posts.descontoirresistivel.com.br/central-tiktok/   (outro domínio: DOMINIO=... antes do bash)
+#   https://financeiro.descontoirresistivel.com.br/central-tiktok/   (outro domínio: DOMINIO=... antes do bash)
 # sem mexer no resto do site: acrescenta só um "location /central-tiktok/" no nginx,
 # com cópia de segurança e teste antes de aplicar (se der erro, volta sozinho).
 # Uso (root):  curl -fsSL .../central-tiktok/publicar-paginas.sh | bash
 set -euo pipefail
 
-DOMINIO="${DOMINIO:-posts.descontoirresistivel.com.br}"
+DOMINIO="${DOMINIO:-financeiro.descontoirresistivel.com.br}"
 RAMO="${RAMO:-claude/ugc-tiktok-video-editing-7d11hx}"
 BASE="https://raw.githubusercontent.com/julianebenetti/tik-tok/${RAMO}/central-tiktok/site"
 PASTA=/var/www/central-tiktok
@@ -15,7 +15,7 @@ PASTA=/var/www/central-tiktok
 
 echo "→ Copiando as páginas pra $PASTA ..."
 mkdir -p "$PASTA"
-for f in privacidade.html termos.html conectar.html estilo.css; do
+for f in index.html privacidade.html termos.html conectar.html estilo.css; do
   curl -fsSL "$BASE/$f" -o "$PASTA/$f"
 done
 chmod 755 "$PASTA"; chmod 644 "$PASTA"/*
@@ -107,6 +107,7 @@ done
 echo
 if [ -n "$OK" ]; then
   echo "Use estes endereços no TikTok for Developers:"
+  echo "   Site do app (Website URL): https://$OK/central-tiktok/"
   echo "   Política de privacidade:  https://$OK/central-tiktok/privacidade.html"
   echo "   Termos de uso:            https://$OK/central-tiktok/termos.html"
   echo "   Redirect URI (Login Kit): https://$OK/central-tiktok/conectar.html"

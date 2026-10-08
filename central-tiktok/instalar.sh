@@ -20,7 +20,7 @@ mkdir -p "$DIR/fontes"
 mkdir -p "$DIR/site"
 for f in central.py cortar_parados.py glossario.py glossario.json texto_tela.py tiktok_api.py \
          fontes/TikTokSans.ttf fontes/OFL.txt \
-         site/privacidade.html site/termos.html site/conectar.html site/estilo.css; do
+         site/index.html site/privacidade.html site/termos.html site/conectar.html site/estilo.css; do
   curl -fsSL "$BASE/$f" -o "$DIR/$f"
 done
 id centraltiktok >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin centraltiktok
