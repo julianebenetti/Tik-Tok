@@ -190,8 +190,11 @@ nem pra print.
 
 ## Central TikTok (pasta `central-tiktok/`)
 - Robô do Telegram no VPS (serviço `central-tiktok`), **separado da AfiliDash e do MGD-Benetti**.
-  Grupo com tópicos Brutos → Editados (aprovação) → Hora de postar → Postados. Corta trechos
-  com a modelo parada, escreve a headline na tela, sugere 5 hashtags + chamada do link.
+  Grupo com tópicos Brutos → Editados (aprovação dela, obrigatória: cortes + headline) → Hora de postar
+  (agenda: hoje + 2 dias como vídeos, um cabeçalho por dia, em ordem de horário; resto na msg fixada)
+  → Postados. Só vai pra Hora de postar depois de aprovado. Corta trechos com a modelo parada, escreve a
+  headline na tela, sugere 5 hashtags + chamada do link. Postar/descartar não reenvia a agenda; só
+  vídeo novo entrando no meio reenvia a partir daquele dia (por file_id, sem novo upload).
 - 6 posts/dia entre 17h e 22h, sempre em horários quebrados. Vídeos sem áudio.
 - Os vídeos vêm do gerador "IA - Multiplicador Vídeo": vários vídeos do mesmo produto, cada um
   seguido de uma mensagem com o nome do arquivo `PRODUTO_EM_MAIUSCULAS_G#C#A#_DDMM_timestamp.mp4`

@@ -4,29 +4,23 @@ Robô do Telegram que organiza os vídeos UGC do TikTok — **separado da AfiliD
 Roda 24h no VPS da Hostinger.
 
 ```
-📥 Brutos  →  ✂️ Editados (aprovação)  →  ⏰ Hora de postar  →  🚀 Postados
+📥 Brutos  →  ✂️ Editados (sua aprovação)  →  ⏰ Hora de postar (agenda)  →  🚀 Postados
 ```
 
-1. Você encaminha os vídeos crus pra **📥 Brutos**. O nome do produto pode vir de 3 jeitos:
-   - **do jeito que o gerador manda**: vídeo e, logo abaixo, a mensagem com o nome do arquivo
-     (`CONJUNTO_BIQUINI_FEMININO_COM_SAIDA_G1C2A1_0510_….mp4`). O robô junta cada nome com o
-     vídeo de cima e guarda a sequência (G1C2A1 = gancho 1 + corpo 2 + CTA 1);
-   - na legenda do vídeo: `nome do produto no TikTok | preço` (preço opcional);
-   - se não vier nada em 30 segundos, o robô pergunta.
-2. O robô corta os trechos em que a modelo fica parada, escreve a **headline na tela**
-   (do glossário do Método UGC) e sugere **5 hashtags** + a **chamada do link**.
-   Ele posta em **✂️ Editados** com os botões **Aprovar · Outra headline · Descartar**.
-   Pra usar uma headline sua, é só responder o vídeo com o texto. Dá pra trocar a headline
-   em qualquer momento — antes de aprovar, já agendado ou em ⏰ Hora de postar — sem perder o horário.
-3. Aprovados entram na agenda: **6 por dia entre 17h e 22h**, em horários quebrados.
-   **Vídeos do mesmo produto nunca caem no mesmo dia** e são espalhados pelo mês
-   (11 vídeos → um a cada 2 dias; 5 vídeos → um a cada 6 dias; no máximo 7 dias de intervalo).
-   O botão **✅✅ Aprovar todos deste produto** agenda todos de uma vez, já espaçados.
-   As headlines não se repetem entre os vídeos do mesmo produto.
-4. No horário, o vídeo chega em **⏰ Hora de postar** com a legenda pra copiar (botões 📋 Copiar legenda / Copiar chamada).
-   No topo desse tópico fica fixada a **📅 Fila de postagem**, com a sequência dos próximos vídeos e botões
-   **🚀** pra adiantar um vídeo e postar agora (também no vídeo agendado em ✂️ Editados).
-   Você posta no TikTok, escolhe o produto do TikTok Shop e toca em **Postei**.
+1. Você encaminha os vídeos crus pra **📥 Brutos**, cada um com o nome do arquivo logo abaixo
+   (`CONJUNTO_BIQUINI_FEMININO_COM_SAIDA_G1C2A1_0510_….mp4`) — ou a legenda `nome do produto | preço`.
+   Se não vier nome em 30 segundos, o robô pergunta.
+2. O robô corta as paradas, escreve a **headline na tela** (estilo dos seus posts) e manda pra
+   **✂️ Editados**. Você confere os cortes e a headline: **✅ Aprovar**, **🔄 Outra headline**
+   (ou responda o vídeo com a sua), **❌ Descartar**, ou **✅✅ Aprovar todos deste produto**.
+3. Aprovado, ele sai de Editados e entra na agenda: **6 por dia entre 17h e 22h**, horários quebrados,
+   **o mesmo produto nunca no mesmo dia** (espalhado pelo mês) e headlines sem repetir no produto.
+4. **⏰ Hora de postar é a agenda**: vídeos de **hoje e dos próximos 2 dias**, com um cabeçalho por dia
+   (📆 Quinta, 09/10 — 6 vídeos) e em ordem de horário. No topo, fixada, a **📅 Agenda** dos dias
+   seguintes, com 🚀 pra adiantar um vídeo.
+   Cada vídeo tem **📋 Copiar legenda / Copiar chamada**, **✅ Postei**, **🔄 Outra headline**,
+   **🔁 Reagendar** e **❌ Descartar**. No horário o robô avisa ("⏰ Hora de postar!") respondendo o vídeo.
+   Pode postar antes: é só tocar em ✅ Postei.
 
 > Fase 3 (depois que o app do TikTok for aprovado): no horário, o vídeo também
 > vai direto pros **rascunhos do TikTok**.
