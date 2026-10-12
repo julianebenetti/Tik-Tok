@@ -195,6 +195,9 @@ nem pra print.
   → Postados. Só vai pra Hora de postar depois de aprovado. Corta trechos com a modelo parada, escreve a
   headline na tela, sugere 5 hashtags + chamada do link. Postar/descartar não reenvia a agenda; só
   vídeo novo entrando no meio reenvia a partir daquele dia (por file_id, sem novo upload).
+  A agenda é atualizada numa thread própria (`pedir_sync`), com pausa de 3 s entre envios (limite de
+  20 msgs/min por grupo) — nunca chamar `sincronizar_agenda` no loop principal. Reagendar apaga a mensagem
+  antiga na hora; atrasados (dias anteriores) aparecem na msg fixada com botão/`/atrasados` pra reagendar todos.
 - 6 posts/dia entre 17h e 22h, sempre em horários quebrados. Vídeos sem áudio.
 - Os vídeos vêm do gerador "IA - Multiplicador Vídeo": vários vídeos do mesmo produto, cada um
   seguido de uma mensagem com o nome do arquivo `PRODUTO_EM_MAIUSCULAS_G#C#A#_DDMM_timestamp.mp4`

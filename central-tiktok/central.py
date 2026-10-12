@@ -507,6 +507,45 @@ def cabecalho_dia(d, n):
     return f"📆 <b>{dia_bonito(dia)}</b> — {n} vídeo{'s' if n > 1 else ''}"
 
 
+pedido_sync = threading.Event()
+pedido_forcar = [False]
+
+
+def pedir_sync(forcar=False):
+    """Pede pra atualizar a agenda em segundo plano (o robô continua respondendo na hora)."""
+    if forcar:
+        pedido_forcar[0] = True
+    pedido_sync.set()
+
+
+def sincronizador():
+    while True:
+        pedido_sync.wait()
+        time.sleep(2)              # junta cliques seguidos numa atualização só
+        pedido_sync.clear()
+        forcar, pedido_forcar[0] = pedido_forcar[0], False
+        try:
+            sincronizar_agenda(forcar)
+        except Exception:
+            traceback.print_exc()
+
+
+def atrasados():
+    ontem = agora().date().isoformat()
+    return db.exec("SELECT * FROM videos WHERE status IN ('agendado','na_hora') AND slot < ? ORDER BY slot",
+                   (ontem,))
+
+
+def reagendar(v):
+    """Novo horário (respeitando o espaçamento do produto) e some a mensagem antiga na hora."""
+    apagar_msgs(v["chat_id"], v["hora_msg"], v["aviso_msg"], v["tiktok_msg"])
+    db.atualizar(v["id"], status="aguardando", slot=None, hora_msg=None, aviso_msg=None, tiktok_msg=None,
+                 tiktok_status=None)
+    slot = proximo_slot(v["id"])
+    db.atualizar(v["id"], status="agendado", slot=slot)
+    return slot
+
+
 def sincronizar_agenda(forcar=False):
     """Deixa ⏰ Hora de postar igual à agenda: um cabeçalho por dia e os vídeos em ordem de horário,
     de hoje até DIAS_NA_AGENDA dias. Só reenvia a partir do primeiro dia que mudou de ordem
@@ -521,10 +560,20 @@ def sincronizar_agenda(forcar=False):
         ativos = db.exec("SELECT * FROM videos WHERE status IN ('agendado','na_hora') AND slot IS NOT NULL "
                          "ORDER BY slot")
         desejado = {d: [v["id"] for v in ativos if v["slot"][:10] == d] for d in janela}
-        # dias que já passaram: só tira o que foi postado/descartado
-        for d in [d for d in pub if d < janela[0]]:
-            pub[d]["ids"] = [i for i in pub[d]["ids"] if any(v["id"] == i for v in ativos)]
-            if not pub[d]["ids"]:
+        dia_de = {v["id"]: v["slot"][:10] for v in ativos}
+        # tira de cada dia publicado o que foi postado/descartado ou mudou de dia (reagendado);
+        # o vídeo reagendado perde a mensagem antiga na hora
+        for d in list(pub):
+            ficam = []
+            for i in pub[d]["ids"]:
+                if dia_de.get(i) == d:
+                    ficam.append(i)
+                elif i in dia_de:
+                    x = db.video(i)
+                    apagar_msgs(chat, x["hora_msg"], x["aviso_msg"], x["tiktok_msg"])
+                    db.atualizar(i, hora_msg=None, aviso_msg=None, tiktok_msg=None)
+            pub[d]["ids"] = ficam
+            if d < janela[0] and not ficam:
                 apagar_msgs(chat, pub.pop(d).get("cab"))
         # primeiro dia da janela que precisa ser reenviado
         inicio = None
@@ -556,6 +605,7 @@ def sincronizar_agenda(forcar=False):
                 cab = texto(chat, cabecalho_dia(d, len(desejado[d])), "hora")
                 for i in desejado[d]:
                     publicar_video(db.video(i))
+                    time.sleep(3)      # ~20 mensagens/min: o limite do Telegram pra grupos
                 pub[d] = {"cab": cab["message_id"] if cab else None, "ids": desejado[d],
                           "txt": cabecalho_dia(d, len(desejado[d]))}
         # cabeçalhos com contagem ou "(hoje)/(amanhã)" desatualizados: edita no lugar
@@ -601,6 +651,12 @@ def atualizar_fila():
         teclado = {"inline_keyboard": [
             [{"text": f"🚀 {datetime.strptime(v['slot'], '%Y-%m-%d %H:%M'):%d/%m} · {v['produto'][:30]}",
               "callback_data": f"pa:{v['id']}"}] for v in depois[:5]]}
+        n_atras = len(atrasados())
+        if n_atras:
+            txt = (f"⚠️ <b>{n_atras} vídeo(s) atrasado(s)</b> de dias anteriores, sem postar. "
+                   f"Toque no botão abaixo pra reagendar todos de uma vez (ou mande /atrasados).\n\n" + txt)
+            teclado["inline_keyboard"].insert(0, [{"text": f"🔁 Reagendar os {n_atras} atrasados",
+                                                   "callback_data": "ra:0"}])
         msg_id = db.get("fila_msg")
         if msg_id:
             try:
@@ -755,7 +811,7 @@ AJUDA = (
     "<b>3.</b> Aprovados entram na agenda (6 por dia, 17h–22h; o mesmo produto nunca no mesmo dia). "
     "Em <b>⏰ Hora de postar</b> ficam os vídeos de hoje e dos próximos dias, em ordem. "
     "No horário eu aviso. Postou? Toque em <b>✅ Postei</b>. Pode postar antes também.\n\n"
-    "Comandos: /agenda · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
+    "Comandos: /agenda · /atrasados (reagenda os vídeos de dias anteriores) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
     "/limiar 1.5 (corta mais) · "
     "/limiar 0.7 (corta menos) · /configurar"
 )
@@ -911,7 +967,7 @@ def tratar_mensagem(msg):
             nome = conta_tiktok.trocar_codigo(partes[1] if len(partes) > 1 else "")
             resp = (f"✅ <b>TikTok conectado</b>{': ' + e(nome) if nome else ''}!\n"
                     "A partir de agora, no horário de cada vídeo eu mando ele pro rascunho do seu TikTok.")
-            sincronizar_agenda(forcar=True)   # os vídeos da agenda ganham o botão 📲
+            pedir_sync(forcar=True)   # os vídeos da agenda ganham o botão 📲
         except Exception as ex:
             resp = f"⚠️ Não consegui conectar: {e(tiktok_api.erro_amigavel(ex))}\nMande /tiktok e tente de novo."
         texto(chat_id, resp, message_thread_id=msg.get("message_thread_id"))
@@ -920,7 +976,16 @@ def tratar_mensagem(msg):
         conta_tiktok.desconectar()
         texto(chat_id, "🔌 TikTok desconectado. Pra revogar de vez: app do TikTok → Configurações e privacidade "
                        "→ Segurança → Apps e serviços.", message_thread_id=msg.get("message_thread_id"))
-        sincronizar_agenda(forcar=True)
+        pedir_sync(forcar=True)
+        return
+    if cmd == "/atrasados":
+        lista = atrasados()
+        for x in lista:
+            reagendar(x)
+        texto(chat_id, (f"🔁 {len(lista)} vídeo(s) atrasado(s) reagendado(s) pros próximos horários livres."
+                        if lista else "✅ Nenhum vídeo atrasado."),
+              responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"))
+        pedir_sync()
         return
     if cmd == "/glossario":
         fonte, n = atualizar_glossario()
@@ -1026,6 +1091,14 @@ def tratar_botao(cb):
         tg_seguro("answerCallbackQuery", callback_query_id=cb["id"], text="Sem permissão")
         return
     acao, vid = cb["data"].split(":")
+    if acao == "ra":
+        lista = atrasados()
+        for x in lista:
+            reagendar(x)
+        tg_seguro("answerCallbackQuery", callback_query_id=cb["id"],
+                  text=f"{len(lista)} vídeo(s) atrasado(s) reagendado(s)" if lista else "Nenhum atrasado")
+        pedir_sync()
+        return
     v = db.video(int(vid))
     aviso = None
     if not v:
@@ -1055,10 +1128,7 @@ def tratar_botao(cb):
         db.atualizar(v["id"], hora_msg=None, aviso_msg=None, tiktok_msg=None)
         aviso = "Boa! 🚀"
     elif acao == "re" and v["status"] in ("agendado", "na_hora"):
-        db.atualizar(v["id"], status="aguardando", slot=None)   # libera o horário atual
-        slot = proximo_slot(v["id"])
-        db.atualizar(v["id"], status="agendado", slot=slot)
-        aviso = f"Reagendado: {slot_bonito(slot)}"
+        aviso = f"Reagendado: {slot_bonito(reagendar(v))}"
     elif acao == "tk" and v["status"] in ("agendado", "na_hora"):
         if conta_tiktok and conta_tiktok.conectada():
             fila.put(("tiktok", v["id"], None))
@@ -1073,7 +1143,7 @@ def tratar_botao(cb):
         aviso = "Esse botão já foi usado"
     tg_seguro("answerCallbackQuery", callback_query_id=cb["id"], text=aviso or "")
     if acao in ("ap", "at", "de", "po", "re", "pa"):
-        sincronizar_agenda()
+        pedir_sync()
 
 
 # =================================================================== main
@@ -1104,7 +1174,8 @@ def main():
     for v in db.exec("SELECT * FROM videos WHERE status IN ('agendado','na_hora') AND editado_msg IS NOT NULL"):
         apagar_msgs(v["chat_id"], v["editado_msg"])
         db.atualizar(v["id"], editado_msg=None)
-    sincronizar_agenda()
+    threading.Thread(target=sincronizador, daemon=True).start()
+    pedir_sync()
     threading.Thread(target=agendador, daemon=True).start()
 
     offset = None
