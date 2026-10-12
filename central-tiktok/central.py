@@ -50,6 +50,7 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 ARQ_API = f"https://api.telegram.org/file/bot{TOKEN}"
 LIMITE_DOWNLOAD = 20 * 1024 * 1024
 
+VERSAO = "2026-10-12 · agenda em segundo plano + /atrasados"
 POSTS_POR_DIA = 6
 JANELA = (17 * 60, 22 * 60)          # 17h às 22h, em minutos
 ESPERA_NOME = 30                      # segundos esperando a mensagem com o nome do arquivo
@@ -978,6 +979,10 @@ def tratar_mensagem(msg):
                        "→ Segurança → Apps e serviços.", message_thread_id=msg.get("message_thread_id"))
         pedir_sync(forcar=True)
         return
+    if cmd == "/versao":
+        texto(chat_id, f"🤖 Central TikTok — versão {VERSAO}",
+              responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"))
+        return
     if cmd == "/atrasados":
         lista = atrasados()
         for x in lista:
@@ -1160,7 +1165,7 @@ def main():
     conta_tiktok = tiktok_api.Conta(DADOS / "tiktok.json")
     atualizar_glossario()
     eu = tg("getMe")
-    print(f"Central TikTok: @{eu['username']} · permitidos {sorted(PERMITIDOS) or 'ninguém'}")
+    print(f"Central TikTok ({VERSAO}): @{eu['username']} · permitidos {sorted(PERMITIDOS) or 'ninguém'}")
 
     for v in db.exec("SELECT id FROM videos WHERE status IN ('fila','processando') ORDER BY id"):
         fila.put(("processar", v["id"], None))
