@@ -198,6 +198,8 @@ nem pra print.
   A agenda é atualizada numa thread própria (`pedir_sync`), com pausa de 3 s entre envios (limite de
   20 msgs/min por grupo) — nunca chamar `sincronizar_agenda` no loop principal. Reagendar apaga a mensagem
   antiga na hora; atrasados (dias anteriores) aparecem na msg fixada com botão/`/atrasados` pra reagendar todos.
+  Toda msg mandada em Hora de postar é registrada (`hora_enviadas`) e as que sobram são apagadas no fim de
+  cada sincronização; botão clicado numa msg que não é a atual do vídeo (órfã) apaga a própria msg. `/versao`.
 - 6 posts/dia entre 17h e 22h, sempre em horários quebrados. Vídeos sem áudio.
 - Os vídeos vêm do gerador "IA - Multiplicador Vídeo": vários vídeos do mesmo produto, cada um
   seguido de uma mensagem com o nome do arquivo `PRODUTO_EM_MAIUSCULAS_G#C#A#_DDMM_timestamp.mp4`

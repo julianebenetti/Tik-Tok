@@ -50,7 +50,7 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 ARQ_API = f"https://api.telegram.org/file/bot{TOKEN}"
 LIMITE_DOWNLOAD = 20 * 1024 * 1024
 
-VERSAO = "2026-10-12 · agenda em segundo plano + /atrasados"
+VERSAO = "2026-10-12b · apaga mensagens antigas da agenda"
 POSTS_POR_DIA = 6
 JANELA = (17 * 60, 22 * 60)          # 17h às 22h, em minutos
 ESPERA_NOME = 30                      # segundos esperando a mensagem com o nome do arquivo
@@ -186,13 +186,29 @@ def topico(nome):
     return (db.get("topicos") or {}).get(nome)
 
 
+trava_registro = threading.Lock()
+
+
+def registrar_hora(msg_id):
+    """Guarda o id de toda mensagem mandada em ⏰ Hora de postar, pra apagar as que sobrarem."""
+    if not msg_id:
+        return
+    with trava_registro:
+        reg = db.get("hora_enviadas", [])
+        reg.append([msg_id, time.time()])
+        db.set("hora_enviadas", reg[-3000:])
+
+
 def texto(chat_id, msg, topico_nome=None, responder=None, **extra):
     params = {"chat_id": chat_id, "text": msg, "parse_mode": "HTML", **extra}
     if topico_nome and topico(topico_nome):
         params["message_thread_id"] = topico(topico_nome)
     if responder:
         params["reply_parameters"] = {"message_id": responder, "allow_sending_without_reply": True}
-    return tg_seguro("sendMessage", **params)
+    res = tg_seguro("sendMessage", **params)
+    if res and topico_nome == "hora":
+        registrar_hora(res["message_id"])
+    return res
 
 
 def botoes(*linhas):
@@ -490,6 +506,7 @@ def publicar_video(v):
     if res is None:
         res = tg_arquivo("sendVideo", "video", v["final"], **params)
     db.atualizar(v["id"], hora_msg=res["message_id"], tg_video=(res.get("video") or {}).get("file_id"))
+    registrar_hora(res["message_id"])
 
 
 def apagar_msgs(chat, *ids):
@@ -622,7 +639,27 @@ def sincronizar_agenda(forcar=False):
                 apagar_msgs(chat, v["hora_msg"], v["aviso_msg"])
                 db.atualizar(v["id"], hora_msg=None, aviso_msg=None)
         db.set("agenda_pub", pub)
+        limpar_sobras(chat, pub)
         atualizar_fila()
+
+
+def limpar_sobras(chat, pub):
+    """Apaga mensagens de ⏰ Hora de postar que o robô mandou e não estão mais em uso."""
+    em_uso = {db.get("fila_msg")} | {info.get("cab") for info in pub.values()}
+    for v in db.exec("SELECT hora_msg, aviso_msg, tiktok_msg FROM videos WHERE status IN ('agendado','na_hora')"):
+        em_uso |= {v["hora_msg"], v["aviso_msg"], v["tiktok_msg"]}
+    with trava_registro:
+        reg = db.get("hora_enviadas", [])
+        fica, apagar = [], []
+        for mid, quando in reg:
+            if mid in em_uso:
+                fica.append([mid, quando])
+            elif time.time() - quando > 120:      # dá tempo de o envio ser associado ao vídeo
+                apagar.append(mid)
+            else:
+                fica.append([mid, quando])
+        db.set("hora_enviadas", fica)
+    apagar_msgs(chat, *apagar)
 
 
 def atualizar_fila():
@@ -1106,6 +1143,18 @@ def tratar_botao(cb):
         return
     v = db.video(int(vid))
     aviso = None
+    clicada = (cb.get("message") or {}).get("message_id")
+    atuais = (v["hora_msg"], v["editado_msg"], v["aviso_msg"], v["tiktok_msg"]) if v else ()
+    if clicada and clicada not in atuais and acao in ("po", "re", "de", "ou", "tk"):
+        # mensagem antiga que sobrou de versões anteriores: some com ela
+        tg_seguro("deleteMessage", chat_id=cb["message"]["chat"]["id"], message_id=clicada)
+        if not v or v["status"] in ("postado", "descartado", "erro"):
+            aviso = "Mensagem antiga apagada 🧹"
+        else:
+            aviso = ("Mensagem antiga apagada 🧹 Esse vídeo está agendado pra " + slot_bonito(v["slot"])
+                     if v["slot"] else "Mensagem antiga apagada 🧹")
+        tg_seguro("answerCallbackQuery", callback_query_id=cb["id"], text=aviso)
+        return
     if not v:
         aviso = "Vídeo não encontrado"
     elif acao == "ap" and v["status"] == "aguardando":
