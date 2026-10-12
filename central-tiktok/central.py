@@ -50,7 +50,7 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 ARQ_API = f"https://api.telegram.org/file/bot{TOKEN}"
 LIMITE_DOWNLOAD = 20 * 1024 * 1024
 
-VERSAO = "2026-10-12b · apaga mensagens antigas da agenda"
+VERSAO = "2026-10-12c · trava contra vídeo duplicado"
 POSTS_POR_DIA = 6
 JANELA = (17 * 60, 22 * 60)          # 17h às 22h, em minutos
 ESPERA_NOME = 30                      # segundos esperando a mensagem com o nome do arquivo
@@ -64,6 +64,7 @@ DIAS_SEMANA = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
 
 fila = queue.Queue()
 legendas_album = {}                   # media_group_id -> legenda do álbum
+avisos_duplicado = {}                 # chat_id -> hora do último aviso de vídeo repetido
 nomes_soltos = {}                     # chat_id -> [(msg_id, produto, sequencia, hora)] esperando o vídeo
 VIZINHANCA = 3                        # nome e vídeo são "vizinhos" se estão a até 3 mensagens de distância
 nome_ativo = {}                       # chat_id -> (produto, preço, msg_id, hora): nome mandado ANTES de uma
@@ -88,7 +89,7 @@ class Banco:
             criado REAL, atualizado REAL)""")
         for col in ("chave TEXT", "sequencia TEXT", "nome_msg INTEGER",   # colunas novas
                     "tg_video TEXT", "aviso_msg INTEGER", "tiktok_id TEXT", "tiktok_status TEXT",
-                    "tiktok_msg INTEGER"):
+                    "tiktok_msg INTEGER", "file_unico TEXT"):
             try:
                 self.exec(f"ALTER TABLE videos ADD COLUMN {col}")
             except sqlite3.OperationalError:
@@ -407,6 +408,8 @@ def enviar_editado(vid):
 
 def processar(vid):
     v = db.video(vid)
+    if not v or v["status"] not in ("fila", "processando"):   # descartado (ex.: cópia repetida) enquanto esperava na fila
+        return
     pasta = pasta_video(vid)
     db.atualizar(vid, status="processando")
     bruto = pasta / "bruto.mp4"
@@ -849,7 +852,7 @@ AJUDA = (
     "<b>3.</b> Aprovados entram na agenda (6 por dia, 17h–22h; o mesmo produto nunca no mesmo dia). "
     "Em <b>⏰ Hora de postar</b> ficam os vídeos de hoje e dos próximos dias, em ordem. "
     "No horário eu aviso. Postou? Toque em <b>✅ Postei</b>. Pode postar antes também.\n\n"
-    "Comandos: /agenda · /atrasados (reagenda os vídeos de dias anteriores) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
+    "Comandos: /agenda · /atrasados (reagenda os vídeos de dias anteriores) · /duplicados (acha vídeo repetido) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
     "/limiar 1.5 (corta mais) · "
     "/limiar 0.7 (corta menos) · /configurar"
 )
@@ -896,8 +899,41 @@ def nome_do_texto(txt):
     return nome, preco, None
 
 
+def ja_existe(file_unico):
+    """O mesmo arquivo do Telegram já entrou antes e ainda conta (não foi descartado)?"""
+    if not file_unico:
+        return None
+    r = db.exec("SELECT * FROM videos WHERE file_unico=? AND status NOT IN ('descartado','erro','duplicado') "
+                "ORDER BY id LIMIT 1", (file_unico,))
+    return r[0] if r else None
+
+
+SITUACAO = {"sem_produto": "esperando o nome", "fila": "na fila de edição", "processando": "sendo editado",
+            "aguardando": "esperando sua aprovação em ✂️ Editados", "agendado": "agendado",
+            "na_hora": "agendado", "postado": "já POSTADO"}
+
+
 def receber_video(msg, video):
-    file_id, tamanho = video
+    file_id, tamanho, file_unico = video
+    chat = msg["chat"]["id"]
+    antigo = ja_existe(file_unico)
+    if antigo:
+        # mesmo vídeo encaminhado de novo: não edita nem agenda outra vez (postar repetido dá punição)
+        db.exec("INSERT INTO videos (status, chat_id, bruto_msg, file_id, file_unico, criado, atualizado) "
+                "VALUES ('duplicado',?,?,?,?,?,?)", (chat, msg["message_id"], file_id, file_unico,
+                                                     time.time(), time.time()))
+        tg_seguro("setMessageReaction", chat_id=chat, message_id=msg["message_id"],
+                  reaction=[{"type": "emoji", "emoji": "🙈"}])
+        ultimo = avisos_duplicado.get(chat, 0)
+        if time.time() - ultimo > 60:
+            avisos_duplicado[chat] = time.time()
+            onde = SITUACAO.get(antigo["status"], antigo["status"])
+            if antigo["status"] in ("agendado", "na_hora") and antigo["slot"]:
+                onde += f" pra {slot_bonito(antigo['slot'])}"
+            texto(chat, f"🙈 Esse vídeo já tinha entrado antes ({e(antigo['produto'] or 'sem nome')}, {onde}). "
+                        "Não vou editar nem agendar de novo, pra não postar repetido.\n"
+                        "Os vídeos com 🙈 são repetidos e foram ignorados.", "brutos", msg["message_id"])
+        return
     if tamanho and tamanho > LIMITE_DOWNLOAD:
         texto(msg["chat"]["id"], f"⚠️ Esse vídeo tem {tamanho / 1048576:.0f} MB e o Telegram só deixa "
                                  "robôs baixarem até 20 MB.", "brutos", msg["message_id"])
@@ -910,9 +946,9 @@ def receber_video(msg, video):
         for v in db.exec("SELECT id FROM videos WHERE status='sem_produto' AND album=? "
                          "AND pergunta_msg IS NULL", (album,)):
             definir_produto(v["id"], *nome_do_texto(leg))
-    chat = msg["chat"]["id"]
-    db.exec("INSERT INTO videos (status, chat_id, bruto_msg, file_id, album, criado, atualizado) "
-            "VALUES ('sem_produto',?,?,?,?,?,?)", (chat, msg["message_id"], file_id, album, time.time(), time.time()))
+    db.exec("INSERT INTO videos (status, chat_id, bruto_msg, file_id, file_unico, album, criado, atualizado) "
+            "VALUES ('sem_produto',?,?,?,?,?,?,?)",
+            (chat, msg["message_id"], file_id, file_unico, album, time.time(), time.time()))
     vid = db.exec("SELECT last_insert_rowid() AS id")[0]["id"]
 
     # de onde vem o nome do produto, em ordem de preferência
@@ -937,10 +973,10 @@ def receber_video(msg, video):
 
 def pegar_video(msg):
     if "video" in msg:
-        return msg["video"]["file_id"], msg["video"].get("file_size", 0)
+        return msg["video"]["file_id"], msg["video"].get("file_size", 0), msg["video"].get("file_unique_id")
     doc = msg.get("document") or {}
     if doc.get("mime_type", "").startswith("video/"):
-        return doc["file_id"], doc.get("file_size", 0)
+        return doc["file_id"], doc.get("file_size", 0), doc.get("file_unique_id")
     return None
 
 
@@ -1029,6 +1065,11 @@ def tratar_mensagem(msg):
               responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"))
         pedir_sync()
         return
+    if cmd == "/duplicados":
+        texto(chat_id, "🔎 Conferindo se tem vídeo repetido…", message_thread_id=msg.get("message_thread_id"))
+        threading.Thread(target=checar_duplicados, daemon=True,
+                         args=(chat_id, msg.get("message_thread_id"))).start()
+        return
     if cmd == "/glossario":
         fonte, n = atualizar_glossario()
         origem = {"github": "versão mais nova do GitHub", "cache": "última versão salva (GitHub fora do ar)",
@@ -1081,14 +1122,24 @@ def tratar_mensagem(msg):
             #     embaixo). Para no texto anterior (o nome da leva/par de cima).
             anteriores = [t for t in textos_brutos.get(chat_id, []) if t < mid]
             limite = max(anteriores) if anteriores else 0
-            r, proximo = [], mid
+            r, proximo, repetidos = [], mid, 0
             for x in db.exec("SELECT id, bruto_msg, status FROM videos WHERE chat_id=? AND bruto_msg < ? "
                              "AND bruto_msg > ? AND criado > ? ORDER BY bruto_msg DESC",
                              (chat_id, mid, limite, time.time() - 3600)):
-                if proximo - x["bruto_msg"] > VIZINHANCA or x["status"] != "sem_produto":
+                if proximo - x["bruto_msg"] > VIZINHANCA:
+                    break
+                if x["status"] == "duplicado":      # vídeo repetido (ignorado) também é "o de cima"
+                    repetidos += 1
+                    proximo = x["bruto_msg"]
+                    continue
+                if x["status"] != "sem_produto":
                     break
                 r.append(x)
                 proximo = x["bruto_msg"]
+            if not r and repetidos:
+                tg_seguro("setMessageReaction", chat_id=chat_id, message_id=mid,
+                          reaction=[{"type": "emoji", "emoji": "🙈"}])
+                return
             ativo = nome_ativo.get(chat_id)
             if r and ativo and ativo[2] == limite:
                 # a leva acima veio DEPOIS de um nome mandado antes dela: é desse nome, não deste
@@ -1127,6 +1178,85 @@ def tratar_mensagem(msg):
                       reaction=[{"type": "emoji", "emoji": "👌"}])
 
 
+def marcar_postado(v, msg_copiar=None):
+    quando = min(v["slot"] or "9999", agora().strftime("%Y-%m-%d %H:%M"))   # postou antes: libera o horário
+    db.atualizar(v["id"], status="postado", slot=quando)
+    origem = v["hora_msg"] or msg_copiar
+    if origem:
+        tg_seguro("copyMessage", chat_id=v["chat_id"], from_chat_id=v["chat_id"],
+                  message_id=origem, message_thread_id=topico("postados"), parse_mode="HTML",
+                  caption=f"🚀 Postado {slot_bonito(quando)}\n🛍 {e(v['produto'])}\n📝 {e(v['headline'])}")
+    apagar_msgs(v["chat_id"], v["hora_msg"], v["aviso_msg"], v["tiktok_msg"])
+    db.atualizar(v["id"], hora_msg=None, aviso_msg=None, tiktok_msg=None)
+
+
+def grupos_duplicados():
+    """[(fica, [cópias a descartar])] entre os vídeos que ainda contam, pelo mesmo arquivo do Telegram.
+    Fica o que já foi postado; se nenhum foi, o mais antigo."""
+    vivos = ("sem_produto", "fila", "processando", "aguardando", "agendado", "na_hora")
+    # vídeos de antes da trava não têm file_unico: pergunta ao Telegram (getFile devolve o id único)
+    for v in db.exec("SELECT id, file_id FROM videos WHERE file_unico IS NULL AND file_id IS NOT NULL "
+                     "AND status IN ('postado'," + ",".join(f"'{x}'" for x in vivos) + ")"):
+        try:
+            db.atualizar(v["id"], file_unico=tg("getFile", file_id=v["file_id"]).get("file_unique_id") or "")
+        except Exception as ex:
+            print("getFile", v["id"], ex)
+    grupos = {}
+    for v in db.exec("SELECT * FROM videos WHERE file_unico IS NOT NULL AND file_unico != '' AND status IN "
+                     "('postado'," + ",".join(f"'{x}'" for x in vivos) + ") ORDER BY id"):
+        grupos.setdefault(v["file_unico"], []).append(v)
+    res = []
+    for lista in grupos.values():
+        if len(lista) < 2:
+            continue
+        postados = [v for v in lista if v["status"] == "postado"]
+        fica = postados[0] if postados else lista[0]
+        # o que está sendo editado agora fica de fora; sai na próxima vez, já editado
+        copias = [v for v in lista if v["id"] != fica["id"] and v["status"] in vivos and v["status"] != "processando"]
+        if copias:
+            res.append((fica, copias))
+    return res
+
+
+def descartar(v):
+    db.atualizar(v["id"], status="descartado", slot=None)
+    apagar_msgs(v["chat_id"], v["editado_msg"], v["hora_msg"], v["aviso_msg"], v["tiktok_msg"])
+    db.atualizar(v["id"], editado_msg=None, hora_msg=None, aviso_msg=None, tiktok_msg=None)
+
+
+def checar_duplicados(chat_id, thread, limpar=False):
+    """Roda numa thread: o getFile dos vídeos antigos pode levar um tempinho."""
+    try:
+        grupos = grupos_duplicados()
+        if not grupos:
+            texto(chat_id, "✅ Nenhum vídeo repetido. Cada vídeo da agenda é único.", message_thread_id=thread)
+            return
+        n = sum(len(c) for _, c in grupos)
+        if limpar:
+            for _, copias in grupos:
+                for v in copias:
+                    descartar(v)
+            texto(chat_id, f"🧹 {n} cópia(s) descartada(s). Ficou um vídeo de cada.", message_thread_id=thread)
+            pedir_sync(forcar=True)
+            return
+        linhas = []
+        for fica, copias in grupos[:20]:
+            estado = ("já postado " + slot_bonito(fica["slot"]) if fica["status"] == "postado"
+                      else SITUACAO.get(fica["status"], fica["status"]))
+            linhas.append(f"• <b>{e(fica['produto'] or 'sem nome')}</b> — fica o #{fica['id']} ({estado}); "
+                          f"{len(copias)} cópia(s): " + ", ".join(
+                              f"#{c['id']}" + (f" {slot_bonito(c['slot'])}" if c["slot"] else "") for c in copias))
+        if len(grupos) > 20:
+            linhas.append(f"… e mais {len(grupos) - 20} vídeos")
+        texto(chat_id, f"⚠️ <b>{n} cópia(s) repetida(s)</b>\n" + "\n".join(linhas),
+              message_thread_id=thread,
+              reply_markup={"inline_keyboard": [[{"text": f"🧹 Descartar as {n} cópias", "callback_data": "dd:0"}]]})
+    except Exception:
+        traceback.print_exc()
+        texto(chat_id, "⚠️ Não consegui conferir os repetidos agora. Tente /duplicados de novo.",
+              message_thread_id=thread)
+
+
 def tratar_botao(cb):
     user = cb.get("from", {}).get("id")
     if user not in PERMITIDOS:
@@ -1141,12 +1271,25 @@ def tratar_botao(cb):
                   text=f"{len(lista)} vídeo(s) atrasado(s) reagendado(s)" if lista else "Nenhum atrasado")
         pedir_sync()
         return
+    if acao == "dd":
+        tg_seguro("answerCallbackQuery", callback_query_id=cb["id"], text="Descartando as cópias…")
+        tg_seguro("deleteMessage", chat_id=cb["message"]["chat"]["id"], message_id=cb["message"]["message_id"])
+        threading.Thread(target=checar_duplicados, daemon=True,
+                         args=(cb["message"]["chat"]["id"], cb["message"].get("message_thread_id"), True)).start()
+        return
     v = db.video(int(vid))
     aviso = None
     clicada = (cb.get("message") or {}).get("message_id")
     atuais = (v["hora_msg"], v["editado_msg"], v["aviso_msg"], v["tiktok_msg"]) if v else ()
     if clicada and clicada not in atuais and acao in ("po", "re", "de", "ou", "tk"):
         # mensagem antiga que sobrou de versões anteriores: some com ela
+        if acao == "po" and v and v["status"] in ("agendado", "na_hora"):
+            # tocou em Postei numa mensagem antiga: vale do mesmo jeito, senão a atual continuaria na agenda
+            marcar_postado(v, msg_copiar=clicada)
+            tg_seguro("deleteMessage", chat_id=cb["message"]["chat"]["id"], message_id=clicada)
+            tg_seguro("answerCallbackQuery", callback_query_id=cb["id"], text="Boa! 🚀 Marcado como postado")
+            pedir_sync()
+            return
         tg_seguro("deleteMessage", chat_id=cb["message"]["chat"]["id"], message_id=clicada)
         if not v or v["status"] in ("postado", "descartado", "erro"):
             aviso = "Mensagem antiga apagada 🧹"
@@ -1167,19 +1310,10 @@ def tratar_botao(cb):
         fila.put(("headline", v["id"], None))
         aviso = "Gerando outra headline..."
     elif acao == "de" and v["status"] in ("aguardando", "agendado", "na_hora"):
-        db.atualizar(v["id"], status="descartado", slot=None)
-        apagar_msgs(v["chat_id"], v["editado_msg"], v["hora_msg"], v["aviso_msg"])
-        db.atualizar(v["id"], editado_msg=None, hora_msg=None, aviso_msg=None)
+        descartar(v)
         aviso = "Descartado"
     elif acao == "po" and v["status"] in ("agendado", "na_hora"):
-        quando = min(v["slot"], agora().strftime("%Y-%m-%d %H:%M"))   # postou antes: libera o horário
-        db.atualizar(v["id"], status="postado", slot=quando)
-        if v["hora_msg"]:
-            tg_seguro("copyMessage", chat_id=v["chat_id"], from_chat_id=v["chat_id"],
-                      message_id=v["hora_msg"], message_thread_id=topico("postados"), parse_mode="HTML",
-                      caption=f"🚀 Postado {slot_bonito(quando)}\n🛍 {e(v['produto'])}\n📝 {e(v['headline'])}")
-        apagar_msgs(v["chat_id"], v["hora_msg"], v["aviso_msg"], v["tiktok_msg"])
-        db.atualizar(v["id"], hora_msg=None, aviso_msg=None, tiktok_msg=None)
+        marcar_postado(v)
         aviso = "Boa! 🚀"
     elif acao == "re" and v["status"] in ("agendado", "na_hora"):
         aviso = f"Reagendado: {slot_bonito(reagendar(v))}"

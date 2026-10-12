@@ -67,6 +67,7 @@ Continue alimentando ela ao longo do ano:
 ## Comandos (no grupo)
 - `/agenda` — o que está agendado e quantos esperam aprovação
 - `/atrasados` — reagenda de uma vez os vídeos de dias anteriores que não foram postados
+- `/duplicados` — confere se tem vídeo repetido na agenda e oferece descartar as cópias (vídeo cru encaminhado 2 vezes já é barrado na entrada, com 🙈)
 - `/glossario` — baixa o glossário mais novo na hora
 - `/limiar 1.5` — corta mais paradas · `/limiar 0.7` — corta menos
 - `/minparado 0.3` — corta também paradas mais curtas

@@ -199,7 +199,12 @@ nem pra print.
   20 msgs/min por grupo) — nunca chamar `sincronizar_agenda` no loop principal. Reagendar apaga a mensagem
   antiga na hora; atrasados (dias anteriores) aparecem na msg fixada com botão/`/atrasados` pra reagendar todos.
   Toda msg mandada em Hora de postar é registrada (`hora_enviadas`) e as que sobram são apagadas no fim de
-  cada sincronização; botão clicado numa msg que não é a atual do vídeo (órfã) apaga a própria msg. `/versao`.
+  cada sincronização; botão clicado numa msg que não é a atual do vídeo (órfã) apaga a própria msg
+  (✅ Postei numa órfã marca o vídeo como postado do mesmo jeito). `/versao`.
+- **Nunca postar repetido** (o TikTok pune): reagendar só troca o horário da mesma linha. Vídeo cru com o mesmo
+  `file_unique_id` de um que ainda conta vira status `duplicado` (reação 🙈, não edita nem agenda; o nome embaixo
+  dele também é ignorado). `/duplicados` confere a agenda (preenche `file_unico` dos antigos via getFile) e
+  oferece descartar as cópias, mantendo o postado ou o mais antigo.
 - 6 posts/dia entre 17h e 22h, sempre em horários quebrados. Vídeos sem áudio.
 - Os vídeos vêm do gerador "IA - Multiplicador Vídeo": vários vídeos do mesmo produto, cada um
   seguido de uma mensagem com o nome do arquivo `PRODUTO_EM_MAIUSCULAS_G#C#A#_DDMM_timestamp.mp4`
