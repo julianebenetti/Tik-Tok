@@ -50,7 +50,7 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 ARQ_API = f"https://api.telegram.org/file/bot{TOKEN}"
 LIMITE_DOWNLOAD = 20 * 1024 * 1024
 
-VERSAO = "2026-10-12c · trava contra vídeo duplicado"
+VERSAO = "2026-10-18 · agenda se refaz sozinha se um envio falhar"
 POSTS_POR_DIA = 6
 JANELA = (17 * 60, 22 * 60)          # 17h às 22h, em minutos
 ESPERA_NOME = 30                      # segundos esperando a mensagem com o nome do arquivo
@@ -64,6 +64,7 @@ DIAS_SEMANA = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
 
 fila = queue.Queue()
 legendas_album = {}                   # media_group_id -> legenda do álbum
+falhas_envio = {}                     # vídeo -> quantas vezes o envio pra ⏰ Hora de postar falhou
 avisos_duplicado = {}                 # chat_id -> hora do último aviso de vídeo repetido
 nomes_soltos = {}                     # chat_id -> [(msg_id, produto, sequencia, hora)] esperando o vídeo
 VIZINHANCA = 3                        # nome e vídeo são "vizinhos" se estão a até 3 mensagens de distância
@@ -597,10 +598,15 @@ def sincronizar_agenda(forcar=False):
             if d < janela[0] and not ficam:
                 apagar_msgs(chat, pub.pop(d).get("cab"))
         # primeiro dia da janela que precisa ser reenviado
+        tem_msg = {v["id"]: v["hora_msg"] for v in ativos}
         inicio = None
         for d in janela:
             atual = pub.get(d, {}).get("ids", [])
-            if forcar or not eh_subsequencia(desejado[d], atual) or (desejado[d] and d not in pub):
+            # um envio que falhou no meio deixa vídeo sem mensagem (ou dia sem cabeçalho): refaz o dia
+            faltando = desejado[d] and (any(not tem_msg.get(i) and falhas_envio.get(i, 0) < 3
+                                                             for i in desejado[d])
+                                         or not pub.get(d, {}).get("cab"))
+            if forcar or faltando or not eh_subsequencia(desejado[d], atual) or (desejado[d] and d not in pub):
                 inicio = d
                 break
             if atual != desejado[d]:          # só saíram vídeos: atualiza a lista, sem reenviar
@@ -620,15 +626,27 @@ def sincronizar_agenda(forcar=False):
                         if x:
                             apagar_msgs(chat, x["hora_msg"], x["aviso_msg"])
                             db.atualizar(i, hora_msg=None, aviso_msg=None)
+            db.set("agenda_pub", pub)     # já salva: se cair no meio, a próxima vez sabe o que falta
+            falhou = False
             for d in refazer:
                 if not desejado[d]:
                     continue
                 cab = texto(chat, cabecalho_dia(d, len(desejado[d])), "hora")
-                for i in desejado[d]:
-                    publicar_video(db.video(i))
-                    time.sleep(3)      # ~20 mensagens/min: o limite do Telegram pra grupos
                 pub[d] = {"cab": cab["message_id"] if cab else None, "ids": desejado[d],
                           "txt": cabecalho_dia(d, len(desejado[d]))}
+                db.set("agenda_pub", pub)
+                falhou = falhou or not cab
+                for i in desejado[d]:
+                    try:
+                        publicar_video(db.video(i))
+                        falhas_envio.pop(i, None)
+                    except Exception as ex:
+                        falhas_envio[i] = falhas_envio.get(i, 0) + 1
+                        print(f"agenda: não consegui mandar o vídeo #{i} ({falhas_envio[i]}ª vez): {ex}")
+                        falhou = falhou or falhas_envio[i] < 3
+                    time.sleep(3)      # ~20 mensagens/min: o limite do Telegram pra grupos
+            if falhou:                 # tenta de novo daqui a 5 min (só o que faltou dispara o refazer)
+                threading.Timer(300, pedir_sync).start()
         # cabeçalhos com contagem ou "(hoje)/(amanhã)" desatualizados: edita no lugar
         for d, info in pub.items():
             novo = cabecalho_dia(d, len(info["ids"]))
@@ -1014,6 +1032,7 @@ def tratar_mensagem(msg):
             linhas.append(f"… e mais {len(ag) - 15} (até {ultimo})")
         aguardando = db.exec("SELECT COUNT(*) AS n FROM videos WHERE status='aguardando'")[0]["n"]
         corpo = "\n".join(linhas) or "Nada agendado ainda."
+        pedir_sync()      # se faltar algum vídeo em ⏰ Hora de postar, manda de novo
         texto(chat_id, f"📅 <b>Agenda</b>\n{corpo}\n\n⏳ Esperando sua aprovação em ✂️ Editados: {aguardando}",
               responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"))
         return

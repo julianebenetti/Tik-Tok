@@ -201,6 +201,9 @@ nem pra print.
   Toda msg mandada em Hora de postar é registrada (`hora_enviadas`) e as que sobram são apagadas no fim de
   cada sincronização; botão clicado numa msg que não é a atual do vídeo (órfã) apaga a própria msg
   (✅ Postei numa órfã marca o vídeo como postado do mesmo jeito). `/versao`.
+  Se um envio falha no meio (rede/timeout), a sincronização salva o progresso por dia e, na próxima vez,
+  refaz o dia que tem vídeo sem `hora_msg` ou sem cabeçalho (tenta de novo em 5 min; desiste do vídeo após 3
+  falhas). `/agenda` também dispara essa conferência.
 - **Nunca postar repetido** (o TikTok pune): reagendar só troca o horário da mesma linha. Vídeo cru com o mesmo
   `file_unique_id` de um que ainda conta vira status `duplicado` (reação 🙈, não edita nem agenda; o nome embaixo
   dele também é ignorado). `/duplicados` confere a agenda (preenche `file_unico` dos antigos via getFile) e
