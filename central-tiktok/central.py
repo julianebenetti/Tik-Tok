@@ -50,7 +50,7 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 ARQ_API = f"https://api.telegram.org/file/bot{TOKEN}"
 LIMITE_DOWNLOAD = 20 * 1024 * 1024
 
-VERSAO = "2026-10-24 · aprovar todos na hora"
+VERSAO = "2026-10-24b · agenda completa + /postei e /descartar por número"
 POSTS_POR_DIA = 6
 JANELA = (17 * 60, 22 * 60)          # 17h às 22h, em minutos
 ESPERA_NOME = 30                      # segundos esperando a mensagem com o nome do arquivo
@@ -897,7 +897,7 @@ AJUDA = (
     "<b>3.</b> Aprovados entram na agenda (6 por dia, 17h–22h; o mesmo produto nunca no mesmo dia). "
     "Em <b>⏰ Hora de postar</b> ficam os vídeos de hoje e dos próximos dias, em ordem. "
     "No horário eu aviso. Postou? Toque em <b>✅ Postei</b>. Pode postar antes também.\n\n"
-    "Comandos: /agenda · /aprovar_editados (aprova tudo que está em ✂️ Editados) · /atrasados (reagenda os vídeos de dias anteriores) · /duplicados (acha vídeo repetido) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
+    "Comandos: /agenda (lista completa com os números) · /postei 12 · /descartar 12 · /aprovar_editados (aprova tudo que está em ✂️ Editados) · /atrasados (reagenda os vídeos de dias anteriores) · /duplicados (acha vídeo repetido) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
     "/limiar 1.5 (corta mais) · "
     "/limiar 0.7 (corta menos) · /configurar"
 )
@@ -1052,16 +1052,53 @@ def tratar_mensagem(msg):
         texto(chat_id, AJUDA, responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"))
         return
     if cmd == "/agenda":
-        ag = db.exec("SELECT * FROM videos WHERE status='agendado' ORDER BY slot")
-        linhas = [f"• {slot_bonito(v['slot'])} — {e(v['produto'])}" for v in ag[:15]]
-        if len(ag) > 15:
-            ultimo = slot_bonito(ag[-1]["slot"])
-            linhas.append(f"… e mais {len(ag) - 15} (até {ultimo})")
+        # agenda completa, por produto, com o número de cada vídeo (pra /postei e /descartar)
+        ag = db.exec("SELECT * FROM videos WHERE status IN ('agendado','na_hora') ORDER BY produto, slot")
         aguardando = db.exec("SELECT COUNT(*) AS n FROM videos WHERE status='aguardando'")[0]["n"]
-        corpo = "\n".join(linhas) or "Nada agendado ainda."
+        por_produto = {}
+        for v in ag:
+            por_produto.setdefault(v["produto"] or "sem nome", []).append(v)
+        blocos = [f"📅 <b>Agenda completa</b> — {len(ag)} vídeo(s) em {len(por_produto)} produto(s)\n"
+                  f"⏳ Esperando aprovação em ✂️ Editados: {aguardando}"]
+        for prod, vs in por_produto.items():
+            linhas = [f"🛍 <b>{e(prod)}</b> ({len(vs)})"]
+            for v in vs:
+                linhas.append(f"  <code>#{v['id']}</code> {slot_bonito(v['slot'])} · {e((v['headline'] or '')[:45])}")
+            blocos.append("\n".join(linhas))
+        blocos.append("Já postou algum por fora? Mande <code>/postei 12 15</code> com os números. "
+                      "Pra tirar da agenda: <code>/descartar 12 15</code>.")
+        msg_atual = ""
+        for b in blocos:            # o Telegram aceita até 4096 caracteres por mensagem
+            if len(msg_atual) + len(b) > 3800:
+                texto(chat_id, msg_atual, message_thread_id=msg.get("message_thread_id"))
+                msg_atual = ""
+            msg_atual += b + "\n\n"
+        texto(chat_id, msg_atual, message_thread_id=msg.get("message_thread_id"))
         pedir_sync()      # se faltar algum vídeo em ⏰ Hora de postar, manda de novo
-        texto(chat_id, f"📅 <b>Agenda</b>\n{corpo}\n\n⏳ Esperando sua aprovação em ✂️ Editados: {aguardando}",
-              responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"))
+        return
+    if cmd in ("/postei", "/descartar"):
+        ids = [int(x) for x in txt.replace("#", " ").replace(",", " ").split()[1:] if x.isdigit()]
+        feitos, ignorados = [], []
+        for i in ids:
+            v = db.video(i)
+            if not v or v["status"] not in ("aguardando", "agendado", "na_hora"):
+                ignorados.append(f"#{i}")
+                continue
+            if cmd == "/postei":
+                if v["editado_msg"]:
+                    lixeira.put((v["chat_id"], v["editado_msg"], None))
+                    db.atualizar(i, editado_msg=None)
+                marcar_postado(db.video(i))
+            else:
+                descartar(v)
+            feitos.append(f"#{i} {e(v['produto'])}")
+        acao = "marcado(s) como postado(s) 🚀" if cmd == "/postei" else "descartado(s) ❌"
+        resp = (f"{len(feitos)} {acao}:\n" + "\n".join(feitos)) if feitos else \
+            f"Use assim: <code>{cmd} 12 15</code> (os números aparecem no /agenda)."
+        if ignorados:
+            resp += "\n\nNão mexi em " + ", ".join(ignorados) + " (não existe ou já foi postado/descartado)."
+        texto(chat_id, resp, responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"))
+        pedir_sync()
         return
     if cmd == "/tiktok":
         if not tiktok_api.configurado():

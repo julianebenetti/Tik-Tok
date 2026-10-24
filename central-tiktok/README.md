@@ -67,6 +67,8 @@ Continue alimentando ela ao longo do ano:
 ## Comandos (no grupo)
 - `/agenda` — o que está agendado e quantos esperam aprovação
 - `/atrasados` — reagenda de uma vez os vídeos de dias anteriores que não foram postados
+- `/agenda` — agenda completa por produto, com o número de cada vídeo
+- `/postei 12 15` — marca como postado (postou por fora) · `/descartar 12 15` — tira da agenda
 - `/aprovar_editados` — aprova de uma vez tudo que está esperando em ✂️ Editados
 - `/duplicados` — confere se tem vídeo repetido na agenda e oferece descartar as cópias (vídeo cru encaminhado 2 vezes já é barrado na entrada, com 🙈)
 - `/glossario` — baixa o glossário mais novo na hora

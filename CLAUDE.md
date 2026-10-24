@@ -207,6 +207,8 @@ nem pra print.
 - Aprovar (um, "todos deste produto" ou `/aprovar_editados`) só muda o banco na hora; a msg de ✂️ Editados vai
   pra `lixeira` e é apagada em segundo plano (thread `apagador`). Se o Telegram não deixar apagar, a legenda vira
   "✅ Aprovado — agendado pra …" e os botões somem. Nunca fazer chamada lenta do Telegram dentro do clique.
+- `/agenda` lista a agenda inteira por produto com o número (`#id`) de cada vídeo; `/postei 12 15` marca como
+  postado (pra vídeo que ela postou por fora) e `/descartar 12 15` tira da agenda.
 - **Nunca postar repetido** (o TikTok pune): reagendar só troca o horário da mesma linha. Vídeo cru com o mesmo
   `file_unique_id` de um que ainda conta vira status `duplicado` (reação 🙈, não edita nem agenda; o nome embaixo
   dele também é ignorado). `/duplicados` confere a agenda (preenche `file_unico` dos antigos via getFile) e
