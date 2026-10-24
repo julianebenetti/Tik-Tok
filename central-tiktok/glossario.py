@@ -319,9 +319,21 @@ def ler_nome_arquivo(texto):
     return nome[0].upper() + nome[1:], sequencia
 
 
+CORES = {"preto", "preta", "branco", "branca", "pink", "rosa", "rose", "azul", "verde", "amarelo", "amarela",
+         "vermelho", "vermelha", "bege", "nude", "marrom", "cinza", "lilas", "roxo", "roxa", "laranja", "vinho",
+         "caramelo", "creme", "marinho", "terracota", "chocolate", "cafe", "dourado", "dourada", "prata",
+         "prateado", "prateada", "coral", "salmao", "fucsia", "pistache", "mostarda", "areia", "offwhite",
+         "off", "white", "black", "jeans claro", "claro", "clara", "escuro", "escura", "bebe", "militar",
+         "musgo", "oliva", "goiaba", "chumbo", "grafite", "e", "cor", "na", "cores"}
+
+
 def chave_produto(nome):
-    """Mesma chave pra variações de escrita do mesmo produto."""
-    return re.sub(r"[^a-z0-9]+", " ", sem_acento(nome or "")).strip()
+    """Mesma chave pra variações de escrita do mesmo produto — e pras cores do mesmo anúncio
+    ("Vestido tomara que caia Preto" e "... Pink" são um produto só: nunca no mesmo dia)."""
+    palavras = re.sub(r"[^a-z0-9]+", " ", sem_acento(nome or "")).split()
+    while len(palavras) > 3 and palavras[-1] in CORES:     # tira as cores do fim (sobram 3+ palavras)
+        palavras.pop()
+    return " ".join(palavras)
 
 aplicar(json.loads(LOCAL.read_text(encoding="utf-8")))
 

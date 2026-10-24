@@ -238,6 +238,9 @@ nem pra print.
   `claude/ugc-tiktok-video-editing-7d11hx`; o robô baixa esse JSON a cada 6h (`/glossario` força).
   Valide sempre com `python3 central-tiktok/glossario.py --validar` antes de commitar.
 - Regras de produto (palavra-chave → termo/gênero/categoria) ficam no `glossario.py`, não no JSON.
+- Cores do mesmo anúncio são um produto só: `chave_produto` tira palavras de cor do fim do nome (lista `CORES`,
+  sempre sobrando 3+ palavras), então "Vestido … Preto" e "… Pink" nunca caem no mesmo dia. Ao iniciar, o robô
+  recalcula a `chave` de todos os vídeos; depois ela roda `/misturar` pra reespaçar.
 - Headline na tela = estilo dos posts da @jubenettiindica: TikTok Sans (wdth 110, wght 550), branca com
   contorno preto fino, sem fundo, 4,9% da largura, bloco centrado a 61% da altura, quebra em 76% da largura,
   emoji no fim escolhido pelo ângulo da headline (`emojis_final` no glossario.json, ex.: preço → 😱 💸 😉🤌,

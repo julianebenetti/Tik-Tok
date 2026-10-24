@@ -50,7 +50,7 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 ARQ_API = f"https://api.telegram.org/file/bot{TOKEN}"
 LIMITE_DOWNLOAD = 20 * 1024 * 1024
 
-VERSAO = "2026-10-24c · /misturar"
+VERSAO = "2026-10-24d · cores do mesmo anúncio = um produto"
 POSTS_POR_DIA = 6
 JANELA = (17 * 60, 22 * 60)          # 17h às 22h, em minutos
 ESPERA_NOME = 30                      # segundos esperando a mensagem com o nome do arquivo
@@ -1507,6 +1507,11 @@ def main():
     global conta_tiktok
     conta_tiktok = tiktok_api.Conta(DADOS / "tiktok.json")
     atualizar_glossario()
+    # a regra de produto pode ter mudado (ex.: cores do mesmo anúncio viram um produto só): recalcula a chave
+    for v in db.exec("SELECT id, produto, chave FROM videos WHERE produto IS NOT NULL"):
+        nova = glossario.chave_produto(v["produto"])
+        if nova != v["chave"]:
+            db.atualizar(v["id"], chave=nova)
     eu = tg("getMe")
     print(f"Central TikTok ({VERSAO}): @{eu['username']} · permitidos {sorted(PERMITIDOS) or 'ninguém'}")
 
