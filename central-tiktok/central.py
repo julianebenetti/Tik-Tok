@@ -50,7 +50,7 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 ARQ_API = f"https://api.telegram.org/file/bot{TOKEN}"
 LIMITE_DOWNLOAD = 20 * 1024 * 1024
 
-VERSAO = "2026-10-24b · agenda completa + /postei e /descartar por número"
+VERSAO = "2026-10-24c · /misturar"
 POSTS_POR_DIA = 6
 JANELA = (17 * 60, 22 * 60)          # 17h às 22h, em minutos
 ESPERA_NOME = 30                      # segundos esperando a mensagem com o nome do arquivo
@@ -246,7 +246,7 @@ def intervalo_produto(chave):
     return max(1, min(MAX_INTERVALO, 30 // max(n, 1)))
 
 
-def proximo_slot(vid):
+def proximo_slot(vid, desde=None):
     v = db.video(vid)
     ocupados = {r["slot"] for r in db.exec(
         "SELECT slot FROM videos WHERE slot IS NOT NULL AND status IN ('agendado','na_hora','postado') "
@@ -256,6 +256,8 @@ def proximo_slot(vid):
         "AND status IN ('agendado','na_hora','postado')", (v["chave"], vid))] if v["chave"] else []
     gap = intervalo_produto(v["chave"]) if v["chave"] else 1
     minimo = agora() + timedelta(minutes=5)
+    if desde and desde > minimo:
+        minimo = desde
     dia = minimo.date()
     for _ in range(400):
         if all(abs((dia - d).days) >= gap for d in dias_produto):
@@ -897,7 +899,7 @@ AJUDA = (
     "<b>3.</b> Aprovados entram na agenda (6 por dia, 17h–22h; o mesmo produto nunca no mesmo dia). "
     "Em <b>⏰ Hora de postar</b> ficam os vídeos de hoje e dos próximos dias, em ordem. "
     "No horário eu aviso. Postou? Toque em <b>✅ Postei</b>. Pode postar antes também.\n\n"
-    "Comandos: /agenda (lista completa com os números) · /postei 12 · /descartar 12 · /aprovar_editados (aprova tudo que está em ✂️ Editados) · /atrasados (reagenda os vídeos de dias anteriores) · /duplicados (acha vídeo repetido) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
+    "Comandos: /agenda (lista completa com os números) · /misturar (produto novo estreia logo) · /postei 12 · /descartar 12 · /aprovar_editados (aprova tudo que está em ✂️ Editados) · /atrasados (reagenda os vídeos de dias anteriores) · /duplicados (acha vídeo repetido) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
     "/limiar 1.5 (corta mais) · "
     "/limiar 0.7 (corta menos) · /configurar"
 )
@@ -1075,6 +1077,30 @@ def tratar_mensagem(msg):
             msg_atual += b + "\n\n"
         texto(chat_id, msg_atual, message_thread_id=msg.get("message_thread_id"))
         pedir_sync()      # se faltar algum vídeo em ⏰ Hora de postar, manda de novo
+        return
+    if cmd == "/misturar":
+        def rodar(chat, thread):
+            try:
+                res = misturar()
+                if not res:
+                    texto(chat, "Nada pra misturar: não tem vídeo agendado a partir de amanhã.", message_thread_id=thread)
+                    return
+                estreia = {}
+                for v, slot in res:
+                    estreia.setdefault(v["produto"] or "sem nome", slot)
+                linhas = [f"• {slot_bonito(sl)} — {e(p)}" for p, sl in sorted(estreia.items(), key=lambda x: x[1])]
+                ultimo = max(sl for _, sl in res)
+                txt = (f"🔀 <b>Agenda misturada</b>: {len(res)} vídeo(s) de {len(estreia)} produto(s), de amanhã até "
+                       f"{slot_bonito(ultimo)}.\n\n<b>Próximo vídeo de cada produto:</b>\n" + "\n".join(linhas[:40]))
+                if len(linhas) > 40:
+                    txt += f"\n… e mais {len(linhas) - 40}"
+                texto(chat, txt[:4000], message_thread_id=thread)
+                pedir_sync()
+            except Exception:
+                traceback.print_exc()
+                texto(chat, "⚠️ Não consegui misturar a agenda. Tente /misturar de novo.", message_thread_id=thread)
+        texto(chat_id, "🔀 Misturando a agenda…", message_thread_id=msg.get("message_thread_id"))
+        threading.Thread(target=rodar, daemon=True, args=(chat_id, msg.get("message_thread_id"))).start()
         return
     if cmd in ("/postei", "/descartar"):
         ids = [int(x) for x in txt.replace("#", " ").replace(",", " ").split()[1:] if x.isdigit()]
@@ -1310,6 +1336,37 @@ def grupos_duplicados():
         if copias:
             res.append((fica, copias))
     return res
+
+
+def misturar():
+    """Reorganiza a agenda a partir de amanhã: 1º vídeo de cada produto primeiro (produto que nunca foi
+    postado estreia antes), depois o 2º de cada, e assim por diante — sempre respeitando o espaçamento
+    do produto e nunca 2 do mesmo produto no mesmo dia. Hoje e o que já foi postado não mudam."""
+    amanha = datetime.combine(agora().date() + timedelta(days=1), datetime.min.time())
+    with trava_agenda:
+        mover = db.exec("SELECT * FROM videos WHERE status='agendado' AND slot >= ? ORDER BY slot",
+                        (amanha.strftime("%Y-%m-%d %H:%M"),))
+        if not mover:
+            return []
+        por_produto = {}
+        for v in mover:
+            por_produto.setdefault(v["chave"] or f"#{v['id']}", []).append(v)
+        def ja_rodou(chave):        # vídeos desse produto já postados ou de hoje
+            return db.exec("SELECT COUNT(*) AS n FROM videos WHERE chave=? AND status IN ('postado','na_hora') "
+                           "OR (chave=? AND status='agendado' AND slot < ?)",
+                           (chave, chave, amanha.strftime("%Y-%m-%d %H:%M")))[0]["n"]
+        ordem = sorted(por_produto, key=lambda k: (ja_rodou(k), por_produto[k][0]["slot"]))
+        fila_nova = []
+        for rodada in range(max(len(x) for x in por_produto.values())):
+            fila_nova += [por_produto[k][rodada] for k in ordem if rodada < len(por_produto[k])]
+        for v in mover:
+            db.atualizar(v["id"], slot=None)
+        resultado = []
+        for v in fila_nova:
+            slot = proximo_slot(v["id"], desde=amanha)
+            db.atualizar(v["id"], slot=slot)
+            resultado.append((v, slot))
+        return resultado
 
 
 def descartar(v):

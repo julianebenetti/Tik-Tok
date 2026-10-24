@@ -209,6 +209,9 @@ nem pra print.
   "✅ Aprovado — agendado pra …" e os botões somem. Nunca fazer chamada lenta do Telegram dentro do clique.
 - `/agenda` lista a agenda inteira por produto com o número (`#id`) de cada vídeo; `/postei 12 15` marca como
   postado (pra vídeo que ela postou por fora) e `/descartar 12 15` tira da agenda.
+- Aprovado entra no 1º horário livre (fila por ordem de aprovação), então produto novo ia pro fim. `/misturar`
+  (ela roda quando quiser) refaz a agenda de amanhã em diante: 1º vídeo de cada produto primeiro (quem nunca
+  rodou antes), depois o 2º de cada etc., mantendo espaçamento e 1 por produto/dia. Hoje e postados não mudam.
 - **Nunca postar repetido** (o TikTok pune): reagendar só troca o horário da mesma linha. Vídeo cru com o mesmo
   `file_unique_id` de um que ainda conta vira status `duplicado` (reação 🙈, não edita nem agenda; o nome embaixo
   dele também é ignorado). `/duplicados` confere a agenda (preenche `file_unico` dos antigos via getFile) e
