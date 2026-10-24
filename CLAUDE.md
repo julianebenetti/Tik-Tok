@@ -215,6 +215,8 @@ nem pra print.
 - `/limpar_editados` (com botão de confirmação): cria um tópico ✂️ Editados novo, reenvia só os `aguardando` e
   apaga o tópico antigo com `deleteForumTopic` (precisa da permissão Apagar mensagens; senão pede pra ela apagar).
   Serve pra sumir com as msgs velhas de versões antigas, cujos ids o robô não guardou.
+  `/limpar_agenda` faz o mesmo com ⏰ Hora de postar: tópico novo, zera hora_msg/aviso_msg/tiktok_msg, agenda_pub,
+  fila_msg e hora_enviadas, apaga o antigo e reenvia a agenda (`pedir_sync(forcar=True)`). Nenhum horário muda.
 - **Nunca postar repetido** (o TikTok pune): reagendar só troca o horário da mesma linha. Vídeo cru com o mesmo
   `file_unique_id` de um que ainda conta vira status `duplicado` (reação 🙈, não edita nem agenda; o nome embaixo
   dele também é ignorado). `/duplicados` confere a agenda (preenche `file_unico` dos antigos via getFile) e

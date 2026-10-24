@@ -67,6 +67,7 @@ Continue alimentando ela ao longo do ano:
 ## Comandos (no grupo)
 - `/agenda` — o que está agendado e quantos esperam aprovação
 - `/atrasados` — reagenda de uma vez os vídeos de dias anteriores que não foram postados
+- `/limpar_agenda` — troca ⏰ Hora de postar por um tópico limpo e manda a agenda de novo
 - `/limpar_editados` — troca ✂️ Editados por um tópico limpo só com o que espera aprovação
 - `/misturar` — reorganiza a agenda de amanhã em diante pra produto novo estrear logo
 - `/agenda` — agenda completa por produto, com o número de cada vídeo

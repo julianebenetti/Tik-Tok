@@ -50,7 +50,7 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 ARQ_API = f"https://api.telegram.org/file/bot{TOKEN}"
 LIMITE_DOWNLOAD = 20 * 1024 * 1024
 
-VERSAO = "2026-10-24e · /limpar_editados"
+VERSAO = "2026-10-24f · /limpar_agenda"
 POSTS_POR_DIA = 6
 JANELA = (17 * 60, 22 * 60)          # 17h às 22h, em minutos
 ESPERA_NOME = 30                      # segundos esperando a mensagem com o nome do arquivo
@@ -899,7 +899,7 @@ AJUDA = (
     "<b>3.</b> Aprovados entram na agenda (6 por dia, 17h–22h; o mesmo produto nunca no mesmo dia). "
     "Em <b>⏰ Hora de postar</b> ficam os vídeos de hoje e dos próximos dias, em ordem. "
     "No horário eu aviso. Postou? Toque em <b>✅ Postei</b>. Pode postar antes também.\n\n"
-    "Comandos: /agenda (lista completa com os números) · /limpar_editados · /misturar (produto novo estreia logo) · /postei 12 · /descartar 12 · /aprovar_editados (aprova tudo que está em ✂️ Editados) · /atrasados (reagenda os vídeos de dias anteriores) · /duplicados (acha vídeo repetido) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
+    "Comandos: /agenda (lista completa com os números) · /limpar_editados · /limpar_agenda · /misturar (produto novo estreia logo) · /postei 12 · /descartar 12 · /aprovar_editados (aprova tudo que está em ✂️ Editados) · /atrasados (reagenda os vídeos de dias anteriores) · /duplicados (acha vídeo repetido) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
     "/limiar 1.5 (corta mais) · "
     "/limiar 0.7 (corta menos) · /configurar"
 )
@@ -1085,6 +1085,14 @@ def tratar_mensagem(msg):
               "Nada da agenda muda.",
               responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"),
               reply_markup={"inline_keyboard": [[{"text": "🧹 Sim, limpar", "callback_data": "le:0"}]]})
+        return
+    if cmd == "/limpar_agenda":
+        n = db.exec("SELECT COUNT(*) AS n FROM videos WHERE status IN ('agendado','na_hora')")[0]["n"]
+        texto(chat_id, f"🧹 <b>Limpar ⏰ Hora de postar</b>\n\n⏰ Na agenda: <b>{n}</b> vídeo(s)\n\n"
+                       "Vou criar um tópico ⏰ Hora de postar novo, apagar o antigo (com todas as mensagens velhas) "
+                       "e mandar a agenda de novo. <b>Nenhum horário muda.</b>",
+              responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"),
+              reply_markup={"inline_keyboard": [[{"text": "🧹 Sim, limpar", "callback_data": "la:0"}]]})
         return
     if cmd == "/misturar":
         def rodar(chat, thread):
@@ -1413,6 +1421,36 @@ def limpar_editados(chat, thread):
         texto(chat, f"⚠️ Não consegui limpar: {e(ex)}", message_thread_id=thread)
 
 
+def limpar_agenda(chat, thread):
+    """Troca o tópico ⏰ Hora de postar por um novo, limpo: apaga o antigo (com as mensagens velhas de versões
+    anteriores) e manda a agenda de novo. Nenhum horário muda."""
+    try:
+        with trava_agenda:
+            topicos = db.get("topicos") or {}
+            antigo = topicos.get("hora")
+            topicos["hora"] = tg("createForumTopic", chat_id=chat, name="⏰ Hora de postar")["message_thread_id"]
+            db.set("topicos", topicos)
+            db.exec("UPDATE videos SET hora_msg=NULL, aviso_msg=NULL, tiktok_msg=NULL")
+            db.set("agenda_pub", {})
+            db.set("fila_msg", None)
+            with trava_registro:
+                db.set("hora_enviadas", [])
+        if thread == antigo:
+            thread = topicos["hora"]
+        apagou = antigo and tg_seguro("deleteForumTopic", chat_id=chat, message_thread_id=antigo)
+        fim = ("O tópico antigo foi apagado." if apagou else
+               "⚠️ Não consegui apagar o tópico antigo — apague você: segure o tópico antigo ⏰ Hora de postar → "
+               "<b>Excluir</b>.")
+        n = db.exec("SELECT COUNT(*) AS n FROM videos WHERE status IN ('agendado','na_hora')")[0]["n"]
+        texto(chat, f"🧹 <b>⏰ Hora de postar limpo!</b> {fim}\nEstou mandando a agenda de novo no tópico novo "
+                    f"(hoje e os próximos 2 dias, uns 3 s por vídeo). Nenhum horário mudou — {n} vídeo(s) na agenda.",
+              message_thread_id=thread)
+        pedir_sync(forcar=True)
+    except Exception as ex:
+        traceback.print_exc()
+        texto(chat, f"⚠️ Não consegui limpar: {e(ex)}", message_thread_id=thread)
+
+
 def descartar(v):
     db.atualizar(v["id"], status="descartado", slot=None)
     apagar_msgs(v["chat_id"], v["editado_msg"], v["hora_msg"], v["aviso_msg"], v["tiktok_msg"])
@@ -1465,6 +1503,12 @@ def tratar_botao(cb):
         tg_seguro("answerCallbackQuery", callback_query_id=cb["id"],
                   text=f"{len(lista)} vídeo(s) atrasado(s) reagendado(s)" if lista else "Nenhum atrasado")
         pedir_sync()
+        return
+    if acao == "la":
+        tg_seguro("answerCallbackQuery", callback_query_id=cb["id"], text="Limpando ⏰ Hora de postar…")
+        tg_seguro("deleteMessage", chat_id=cb["message"]["chat"]["id"], message_id=cb["message"]["message_id"])
+        threading.Thread(target=limpar_agenda, daemon=True,
+                         args=(cb["message"]["chat"]["id"], cb["message"].get("message_thread_id"))).start()
         return
     if acao == "le":
         tg_seguro("answerCallbackQuery", callback_query_id=cb["id"], text="Limpando ✂️ Editados…")
