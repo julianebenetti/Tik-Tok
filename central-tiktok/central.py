@@ -50,7 +50,7 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 ARQ_API = f"https://api.telegram.org/file/bot{TOKEN}"
 LIMITE_DOWNLOAD = 20 * 1024 * 1024
 
-VERSAO = "2026-10-18 · agenda se refaz sozinha se um envio falhar"
+VERSAO = "2026-10-24 · aprovar todos na hora"
 POSTS_POR_DIA = 6
 JANELA = (17 * 60, 22 * 60)          # 17h às 22h, em minutos
 ESPERA_NOME = 30                      # segundos esperando a mensagem com o nome do arquivo
@@ -63,6 +63,7 @@ DIAS_SEMANA_LONGO = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"
 DIAS_SEMANA = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
 
 fila = queue.Queue()
+lixeira = queue.Queue()                # (chat, msg_id, legenda se não der pra apagar): apagadas em segundo plano
 legendas_album = {}                   # media_group_id -> legenda do álbum
 falhas_envio = {}                     # vídeo -> quantas vezes o envio pra ⏰ Hora de postar falhou
 avisos_duplicado = {}                 # chat_id -> hora do último aviso de vídeo repetido
@@ -355,14 +356,40 @@ def botoes_aprovacao(vid):
 
 
 def agendar(vid):
-    """Aprovado: ganha horário e sai de ✂️ Editados (a agenda em ⏰ Hora de postar é atualizada depois)."""
+    """Aprovado: ganha horário e sai de ✂️ Editados (a agenda em ⏰ Hora de postar é atualizada depois).
+    A mensagem de ✂️ Editados é apagada em segundo plano: aprovar muitos de uma vez não trava o robô."""
     slot = proximo_slot(vid)
     db.atualizar(vid, status="agendado", slot=slot)
     v = db.video(vid)
     if v["editado_msg"]:
-        apagar_msgs(v["chat_id"], v["editado_msg"])
+        lixeira.put((v["chat_id"], v["editado_msg"],
+                     f"✅ <b>Aprovado</b> — agendado pra {slot_bonito(slot)}\n🛍 {e(v['produto'])}"))
         db.atualizar(vid, editado_msg=None)
     return slot
+
+
+def apagador():
+    while True:
+        chat, mid, legenda = lixeira.get()
+        try:
+            if not tg_seguro("deleteMessage", chat_id=chat, message_id=mid) and legenda:
+                # o Telegram não deixou apagar (mensagem antiga): pelo menos tira os botões e marca aprovado
+                tg_seguro("editMessageCaption", chat_id=chat, message_id=mid, caption=legenda,
+                          parse_mode="HTML", reply_markup={"inline_keyboard": []})
+        except Exception:
+            traceback.print_exc()
+        time.sleep(0.3)
+
+
+def aprovar_lista(ids):
+    """Aprova vários de uma vez; devolve os horários em ordem."""
+    slots = []
+    for i in ids:
+        try:
+            slots.append(agendar(i))
+        except Exception as ex:
+            print(f"aprovar #{i}: {ex}")
+    return sorted(slots)
 
 
 # =================================================================== processamento
@@ -870,7 +897,7 @@ AJUDA = (
     "<b>3.</b> Aprovados entram na agenda (6 por dia, 17h–22h; o mesmo produto nunca no mesmo dia). "
     "Em <b>⏰ Hora de postar</b> ficam os vídeos de hoje e dos próximos dias, em ordem. "
     "No horário eu aviso. Postou? Toque em <b>✅ Postei</b>. Pode postar antes também.\n\n"
-    "Comandos: /agenda · /atrasados (reagenda os vídeos de dias anteriores) · /duplicados (acha vídeo repetido) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
+    "Comandos: /agenda · /aprovar_editados (aprova tudo que está em ✂️ Editados) · /atrasados (reagenda os vídeos de dias anteriores) · /duplicados (acha vídeo repetido) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
     "/limiar 1.5 (corta mais) · "
     "/limiar 0.7 (corta menos) · /configurar"
 )
@@ -1088,6 +1115,17 @@ def tratar_mensagem(msg):
         texto(chat_id, "🔎 Conferindo se tem vídeo repetido…", message_thread_id=msg.get("message_thread_id"))
         threading.Thread(target=checar_duplicados, daemon=True,
                          args=(chat_id, msg.get("message_thread_id"))).start()
+        return
+    if cmd in ("/aprovar_editados", "/aprovar_todos"):
+        ids = [x["id"] for x in db.exec("SELECT id FROM videos WHERE status='aguardando' ORDER BY id")]
+        slots = aprovar_lista(ids)
+        faltam = db.exec("SELECT COUNT(*) AS n FROM videos WHERE status IN ('fila','processando')")[0]["n"]
+        resp = (f"✅ {len(slots)} vídeo(s) de ✂️ Editados aprovado(s), de {slot_bonito(slots[0])} até "
+                f"{slot_bonito(slots[-1])}." if slots else "Nada esperando aprovação em ✂️ Editados.")
+        if faltam:
+            resp += f"\n⏳ {faltam} ainda sendo editado(s) — quando ficarem prontos, aparecem em ✂️ Editados."
+        texto(chat_id, resp, responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"))
+        pedir_sync()
         return
     if cmd == "/glossario":
         fonte, n = atualizar_glossario()
@@ -1322,9 +1360,18 @@ def tratar_botao(cb):
     elif acao == "ap" and v["status"] == "aguardando":
         aviso = f"Aprovado ✅ Vai pra ⏰ Hora de postar: {slot_bonito(agendar(v['id']))}"
     elif acao == "at" and v["status"] == "aguardando":
-        todos = db.exec("SELECT id FROM videos WHERE chave=? AND status='aguardando' ORDER BY id", (v["chave"],))
-        slots = sorted(agendar(x["id"]) for x in todos)
-        aviso = f"{len(slots)} aprovados, de {slot_bonito(slots[0])} até {slot_bonito(slots[-1])}"
+        todos = db.exec("SELECT id FROM videos WHERE chave=? AND status='aguardando' ORDER BY id", (v["chave"],)) \
+            if v["chave"] else [v]
+        slots = aprovar_lista([x["id"] for x in todos])
+        faltam = db.exec("SELECT COUNT(*) AS n FROM videos WHERE chave=? AND status IN ('fila','processando')",
+                         (v["chave"],))[0]["n"] if v["chave"] else 0
+        aviso = (f"✅ {len(slots)} aprovado(s), de {slot_bonito(slots[0])} até {slot_bonito(slots[-1])}"
+                 if slots else "Não consegui aprovar — mande /aprovar_editados")
+        if faltam:
+            aviso += f"\n\n⏳ {faltam} deste produto em edição: vão aparecer em ✂️ Editados."
+        tg_seguro("answerCallbackQuery", callback_query_id=cb["id"], text=aviso, show_alert=True)
+        pedir_sync()
+        return
     elif acao == "ou" and v["status"] in ("aguardando", "agendado", "na_hora"):
         fila.put(("headline", v["id"], None))
         aviso = "Gerando outra headline..."
@@ -1382,6 +1429,7 @@ def main():
         apagar_msgs(v["chat_id"], v["editado_msg"])
         db.atualizar(v["id"], editado_msg=None)
     threading.Thread(target=sincronizador, daemon=True).start()
+    threading.Thread(target=apagador, daemon=True).start()
     pedir_sync()
     threading.Thread(target=agendador, daemon=True).start()
 

@@ -204,6 +204,9 @@ nem pra print.
   Se um envio falha no meio (rede/timeout), a sincronização salva o progresso por dia e, na próxima vez,
   refaz o dia que tem vídeo sem `hora_msg` ou sem cabeçalho (tenta de novo em 5 min; desiste do vídeo após 3
   falhas). `/agenda` também dispara essa conferência.
+- Aprovar (um, "todos deste produto" ou `/aprovar_editados`) só muda o banco na hora; a msg de ✂️ Editados vai
+  pra `lixeira` e é apagada em segundo plano (thread `apagador`). Se o Telegram não deixar apagar, a legenda vira
+  "✅ Aprovado — agendado pra …" e os botões somem. Nunca fazer chamada lenta do Telegram dentro do clique.
 - **Nunca postar repetido** (o TikTok pune): reagendar só troca o horário da mesma linha. Vídeo cru com o mesmo
   `file_unique_id` de um que ainda conta vira status `duplicado` (reação 🙈, não edita nem agenda; o nome embaixo
   dele também é ignorado). `/duplicados` confere a agenda (preenche `file_unico` dos antigos via getFile) e
