@@ -212,6 +212,9 @@ nem pra print.
 - Aprovado entra no 1º horário livre (fila por ordem de aprovação), então produto novo ia pro fim. `/misturar`
   (ela roda quando quiser) refaz a agenda de amanhã em diante: 1º vídeo de cada produto primeiro (quem nunca
   rodou antes), depois o 2º de cada etc., mantendo espaçamento e 1 por produto/dia. Hoje e postados não mudam.
+- `/limpar_editados` (com botão de confirmação): cria um tópico ✂️ Editados novo, reenvia só os `aguardando` e
+  apaga o tópico antigo com `deleteForumTopic` (precisa da permissão Apagar mensagens; senão pede pra ela apagar).
+  Serve pra sumir com as msgs velhas de versões antigas, cujos ids o robô não guardou.
 - **Nunca postar repetido** (o TikTok pune): reagendar só troca o horário da mesma linha. Vídeo cru com o mesmo
   `file_unique_id` de um que ainda conta vira status `duplicado` (reação 🙈, não edita nem agenda; o nome embaixo
   dele também é ignorado). `/duplicados` confere a agenda (preenche `file_unico` dos antigos via getFile) e

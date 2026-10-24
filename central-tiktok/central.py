@@ -50,7 +50,7 @@ API = f"https://api.telegram.org/bot{TOKEN}"
 ARQ_API = f"https://api.telegram.org/file/bot{TOKEN}"
 LIMITE_DOWNLOAD = 20 * 1024 * 1024
 
-VERSAO = "2026-10-24d · cores do mesmo anúncio = um produto"
+VERSAO = "2026-10-24e · /limpar_editados"
 POSTS_POR_DIA = 6
 JANELA = (17 * 60, 22 * 60)          # 17h às 22h, em minutos
 ESPERA_NOME = 30                      # segundos esperando a mensagem com o nome do arquivo
@@ -899,7 +899,7 @@ AJUDA = (
     "<b>3.</b> Aprovados entram na agenda (6 por dia, 17h–22h; o mesmo produto nunca no mesmo dia). "
     "Em <b>⏰ Hora de postar</b> ficam os vídeos de hoje e dos próximos dias, em ordem. "
     "No horário eu aviso. Postou? Toque em <b>✅ Postei</b>. Pode postar antes também.\n\n"
-    "Comandos: /agenda (lista completa com os números) · /misturar (produto novo estreia logo) · /postei 12 · /descartar 12 · /aprovar_editados (aprova tudo que está em ✂️ Editados) · /atrasados (reagenda os vídeos de dias anteriores) · /duplicados (acha vídeo repetido) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
+    "Comandos: /agenda (lista completa com os números) · /limpar_editados · /misturar (produto novo estreia logo) · /postei 12 · /descartar 12 · /aprovar_editados (aprova tudo que está em ✂️ Editados) · /atrasados (reagenda os vídeos de dias anteriores) · /duplicados (acha vídeo repetido) · /tiktok (conectar o TikTok) · /glossario (recarrega headlines e hashtags) · "
     "/limiar 1.5 (corta mais) · "
     "/limiar 0.7 (corta menos) · /configurar"
 )
@@ -1077,6 +1077,14 @@ def tratar_mensagem(msg):
             msg_atual += b + "\n\n"
         texto(chat_id, msg_atual, message_thread_id=msg.get("message_thread_id"))
         pedir_sync()      # se faltar algum vídeo em ⏰ Hora de postar, manda de novo
+        return
+    if cmd == "/limpar_editados":
+        texto(chat_id, "🧹 <b>Limpar ✂️ Editados</b>\n\n" + resumo_editados() +
+              "\n\nVou criar um tópico ✂️ Editados novo só com os que esperam aprovação e apagar o antigo "
+              "(as mensagens velhas de vídeos que já estão na agenda ou já foram postados). "
+              "Nada da agenda muda.",
+              responder=msg["message_id"], message_thread_id=msg.get("message_thread_id"),
+              reply_markup={"inline_keyboard": [[{"text": "🧹 Sim, limpar", "callback_data": "le:0"}]]})
         return
     if cmd == "/misturar":
         def rodar(chat, thread):
@@ -1369,6 +1377,42 @@ def misturar():
         return resultado
 
 
+def resumo_editados():
+    n = {r["status"]: r["n"] for r in db.exec("SELECT status, COUNT(*) AS n FROM videos GROUP BY status")}
+    return (f"✂️ Esperando sua aprovação: <b>{n.get('aguardando', 0)}</b>\n"
+            f"🛠 Sendo editados agora: <b>{n.get('fila', 0) + n.get('processando', 0)}</b>\n"
+            f"⏰ Já na agenda: <b>{n.get('agendado', 0) + n.get('na_hora', 0)}</b>\n"
+            f"🚀 Já postados: <b>{n.get('postado', 0)}</b>")
+
+
+def limpar_editados(chat, thread):
+    """Troca o tópico ✂️ Editados por um novo, limpo: reenvia só o que espera aprovação e apaga o antigo
+    (com todas as mensagens velhas de vídeos que já foram aprovados, postados ou descartados)."""
+    try:
+        topicos = db.get("topicos") or {}
+        antigo = topicos.get("editados")
+        topicos["editados"] = tg("createForumTopic", chat_id=chat, name="✂️ Editados")["message_thread_id"]
+        db.set("topicos", topicos)
+        if thread == antigo:       # pediu de dentro do tópico que vai ser apagado: responde no novo
+            thread = topicos["editados"]
+        pendentes = db.exec("SELECT id FROM videos WHERE status='aguardando' ORDER BY id")
+        for v in pendentes:
+            try:
+                enviar_editado(v["id"])
+            except Exception as ex:
+                print(f"limpar_editados #{v['id']}: {ex}")
+            time.sleep(3)          # limite de mensagens do Telegram
+        apagou = antigo and tg_seguro("deleteForumTopic", chat_id=chat, message_thread_id=antigo)
+        fim = ("O tópico antigo foi apagado." if apagou else
+               "⚠️ Não consegui apagar o tópico antigo — apague você: segure o tópico antigo ✂️ Editados → "
+               "<b>Excluir</b>. (Ou me dê a permissão de administrador <b>Apagar mensagens</b>.)")
+        texto(chat, f"🧹 <b>✂️ Editados limpo!</b> Criei um tópico novo só com os {len(pendentes)} vídeo(s) "
+                    f"que esperam sua aprovação.\n{fim}\n\n" + resumo_editados(), message_thread_id=thread)
+    except Exception as ex:
+        traceback.print_exc()
+        texto(chat, f"⚠️ Não consegui limpar: {e(ex)}", message_thread_id=thread)
+
+
 def descartar(v):
     db.atualizar(v["id"], status="descartado", slot=None)
     apagar_msgs(v["chat_id"], v["editado_msg"], v["hora_msg"], v["aviso_msg"], v["tiktok_msg"])
@@ -1421,6 +1465,12 @@ def tratar_botao(cb):
         tg_seguro("answerCallbackQuery", callback_query_id=cb["id"],
                   text=f"{len(lista)} vídeo(s) atrasado(s) reagendado(s)" if lista else "Nenhum atrasado")
         pedir_sync()
+        return
+    if acao == "le":
+        tg_seguro("answerCallbackQuery", callback_query_id=cb["id"], text="Limpando ✂️ Editados…")
+        tg_seguro("deleteMessage", chat_id=cb["message"]["chat"]["id"], message_id=cb["message"]["message_id"])
+        threading.Thread(target=limpar_editados, daemon=True,
+                         args=(cb["message"]["chat"]["id"], cb["message"].get("message_thread_id"))).start()
         return
     if acao == "dd":
         tg_seguro("answerCallbackQuery", callback_query_id=cb["id"], text="Descartando as cópias…")
